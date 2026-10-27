@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 import polars as pl
 
-from . import baas, catalog, config, fetch, mixing, stats
+from . import baas, catalog, config, fetch, median, mixing, pipeline, stats
 
 log = logging.getLogger(__name__)
 
@@ -286,8 +286,33 @@ def check_distributions(
     return j.filter(pl.col("n_block").is_null() | (pl.col("n_hist") != pl.col("n_block")))
 
 
+def res_effective(spatial_resolution: float | None) -> float:
+    """Arvutuse lahutusvõime (m): madalama lahutusvõimega kihid on viidud 10 m lahutusvõimele, vektorid 10 m."""
+    if spatial_resolution is None or spatial_resolution > pipeline.MAX_RES_M:
+        return 10.0
+    return float(spatial_resolution)
+
+
+def _join_median(out: dict[str, pl.DataFrame], med: dict[str, pl.DataFrame]) -> dict[str, pl.DataFrame]:
+    """Liida mediaanipõhised veerud (``stats.analyse_layer_median``) keskmisepõhistele tabelitele."""
+    keys = {"paarid": ["unit_level", "unit_code", "pair"], "lahtrid": ["unit_level", "unit_code", "state"]}
+    res = dict(out)
+    for k, on in keys.items():
+        if not out[k].is_empty() and not med[k].is_empty():
+            res[k] = out[k].join(med[k], on=on, how="left")
+    if not out["klassid"].is_empty() and not med["klassid"].is_empty():
+        res["klassid"] = out["klassid"].join(
+            med["klassid"].with_columns(pl.col("cls").cast(out["klassid"]["cls"].dtype)), on="cls", how="left"
+        )
+    res["algklassid"] = med["algklassid"]
+    return res
+
+
 def run(
-    params: stats.Params | None = None, only: set[str] | None = None, out_dir: Path | None = None
+    params: stats.Params | None = None,
+    only: set[str] | None = None,
+    out_dir: Path | None = None,
+    unpaired_median_boot: bool = True,
 ) -> dict[str, pl.DataFrame]:
     """Analüüsi kõik plokitabelid ja kirjuta tulemused.
 
@@ -299,6 +324,8 @@ def run(
         Kui antud, ainult need kihi id-d.
     out_dir
         Väljundkaust (vaikimisi ``data/tulemused``).
+    unpaired_median_boot
+        Kas arvutada paaritamata mediaanide vahe bootstrap (tundlikkuse variantides ei kasutata).
     """
     params = params or stats.Params()
     out_dir = out_dir or config.RESULTS
@@ -315,6 +342,7 @@ def run(
     pairs: list[pl.DataFrame] = []
     cells: list[pl.DataFrame] = []
     cls_tabs: list[pl.DataFrame] = []
+    alg_tabs: list[pl.DataFrame] = []
     diag: list[dict[str, object]] = []
     for r in ev.iter_rows(named=True):
         path = config.BLOCKS / f"{r['id']}.parquet"
@@ -322,8 +350,20 @@ def run(
             continue
         t0 = time.time()
         tbl = pl.read_parquet(path)
-        res_m = float(r["spatial_resolution"] or 10.0)  # rasteriseeritud vektorid: 10 m
+        res_m = res_effective(r["spatial_resolution"])
         out = stats.analyse_layer(tbl, u, res_m, params, W)
+        vdir, bpath = pipeline.val_path(r["id"]), pipeline.blkmed_path(r["id"])
+        if vdir.is_dir() and bpath.exists() and not tbl.is_empty():
+            vt = median.ValueTable.load(vdir)
+            med = stats.analyse_layer_median(
+                pl.read_parquet(bpath), vt, vdir, u, used, res_m, params, W, unpaired_median_boot
+            )
+            del vt
+            out = _join_median(out, med)
+            if not out["algklassid"].is_empty():
+                alg_tabs.append(out["algklassid"].with_columns(pl.lit(r["id"]).alias("layer_id")))
+        else:
+            log.warning("%s: mediaanide sisend puudub (aggregeeri uuesti)", r["id"])
         for key, lst in (("paarid", pairs), ("lahtrid", cells), ("klassid", cls_tabs)):
             if not out[key].is_empty():
                 lst.append(
@@ -332,29 +372,41 @@ def run(
         for d in diagnostics(tbl, u):
             diag.append({"layer_id": r["id"], **d})
         log.info("%s: %.1f s, %d paari", r["id"], time.time() - t0, out["paarid"].height)
+
+    def _note(r: dict[str, object]) -> str:
+        res = r["spatial_resolution"]
+        if r["tyyp"] == "raster" and isinstance(res, int | float) and res > pipeline.MAX_RES_M:
+            return f"Madalama lahutusvõimega kiht ({res:.0f} m). Arvutuseks viidud baaskaardi 10 m lahutusvõimele; seisundite erinevus tuleb ainult {res:.0f} m ruutude vahelistest erinevustest."
+        if r["id"] == "lamm_grd1000_am_drained_2022":
+            return "Madalama lahutusvõimega kiht (1 km). Arvutuseks viidud baaskaardi 10 m lahutusvõimele; seisundite erinevus tuleb ainult 1 km ruutude vahelistest erinevustest."
+        return ""
+
     notes = [
         {
             "id": r["id"],
             "meetod": "paaritatud (plokk × alamökosüsteem)"
             if r["tyyp"] == "raster"
-            else "paaritatud (põllumassiivid rasteriseeritud 10 m)",
-            "markus": "",
+            else "paaritatud (vektor rasteriseeritud 10 m)",
+            "markus": _note(r),
         }
         for r in ev.iter_rows(named=True)
         if (config.BLOCKS / f"{r['id']}.parquet").exists() and (not only or r["id"] in only)
     ]
+    # segumudel (keskmisepõhine, uuriv) jääb võrdluseks eraldi failidesse
+    mixed: dict[str, pl.DataFrame] = {}
     if not only or any(i in only for i in ("lamm_grd1000_am_drained_2022",)):
         mp, mc, mn = run_mixing(params, W, classes, u, cat)
         if not mp.is_empty():
-            pairs.append(mp)
-            cells.append(mc.with_columns(pl.lit(None, dtype=pl.Float64).alias("res_m"), pl.col("layer_id")))
+            mixed = {"paarid_segumudel": add_fdr(mp, params.alpha), "lahtrid_segumudel": mc}
             notes.extend(mn.select("id", "meetod", "markus").to_dicts())
     pl.DataFrame(notes).write_csv(out_dir / "teenused_lisa.csv")
     res = {
         "paarid": pl.concat(pairs, how="diagonal_relaxed") if pairs else pl.DataFrame(),
         "lahtrid": pl.concat(cells, how="diagonal_relaxed") if cells else pl.DataFrame(),
-        "klassid": pl.concat(cls_tabs) if cls_tabs else pl.DataFrame(),
+        "klassid": pl.concat(cls_tabs, how="diagonal_relaxed") if cls_tabs else pl.DataFrame(),
+        "algklassid": pl.concat(alg_tabs, how="diagonal_relaxed") if alg_tabs else pl.DataFrame(),
         "diagnostika": pl.DataFrame(diag),
+        **mixed,
     }
     dist, dspecs = distributions(u, [r["id"] for r in ev.iter_rows(named=True)])
     if not dist.is_empty():
@@ -374,22 +426,33 @@ def run(
     return res
 
 
+#: FDR-perekonnad: (p-väärtus, q-väärtus); ``_med`` = mediaanipõhine (metoodika v2).
+_FDR = (
+    ("p_m", "q_m"),
+    ("p_u", "q_u"),
+    ("wilcoxon_p", "q_wilcoxon"),
+    ("p_m_med", "q_m_med"),
+    ("p_u_med", "q_u_med"),
+    ("wilcoxon_p_med", "q_wilcoxon_med"),
+)
+
+
 def add_fdr(paarid: pl.DataFrame, alpha: float) -> pl.DataFrame:
-    """Lisa FDR-korrigeeritud ``q_m``/``q_u`` (perekond = unit_level) ja olulisuse lipud."""
+    """Lisa FDR-korrigeeritud q-väärtused (perekond = unit_level) ja olulisuse lipud (keskmise ja mediaani kohta)."""
     parts = []
     for col in ("p_u", "wilcoxon_p", "p_m"):
         if col not in paarid.columns:
             paarid = paarid.with_columns(pl.lit(None, dtype=pl.Float64).alias(col))
+    fam = [(pc, qc) for pc, qc in _FDR if pc in paarid.columns]
     for level in ("okosusteem", "alam"):
         d = paarid.filter(pl.col("unit_level") == level)
         if d.is_empty():
             continue
-        qm = stats.bh_fdr(d["p_m"].to_numpy())
-        qu = stats.bh_fdr(d["p_u"].to_numpy())
-        qw = stats.bh_fdr(d["wilcoxon_p"].to_numpy())
-        parts.append(d.with_columns(pl.Series("q_m", qm), pl.Series("q_u", qu), pl.Series("q_wilcoxon", qw)))
+        parts.append(
+            d.with_columns(pl.Series(qc, stats.bh_fdr(d[pc].to_numpy().astype(np.float64))) for pc, qc in fam)
+        )
     out = pl.concat(parts, how="diagonal_relaxed")
-    return out.with_columns(
+    out = out.with_columns(
         (pl.col("q_m") < alpha).fill_null(False).alias("oluline_m"),
         (pl.col("q_u") < alpha).fill_null(False).alias("oluline_u"),
     ).with_columns(
@@ -397,6 +460,18 @@ def add_fdr(paarid: pl.DataFrame, alpha: float) -> pl.DataFrame:
             pl.col("oluline_m") & pl.col("oluline_u") & (pl.col("delta_m").sign() == pl.col("delta_u").sign())
         ).alias("kooskolas")
     )
+    if "q_m_med" in out.columns:
+        out = out.with_columns(
+            (pl.col("q_m_med") < alpha).fill_null(False).alias("oluline_m_med"),
+            (pl.col("q_u_med") < alpha).fill_null(False).alias("oluline_u_med"),
+        ).with_columns(
+            (
+                pl.col("oluline_m_med")
+                & pl.col("oluline_u_med")
+                & (pl.col("delta_m_med").sign() == pl.col("delta_u_med").sign())
+            ).alias("kooskolas_med")
+        )
+    return out
 
 
 #: Tundlikkuse variandid: klastri suurus, minimaalne ala ja juhuslik seeme.
@@ -433,15 +508,24 @@ def sensitivity(
     """
     variants = variants or VARIANTS
     rows: list[dict[str, object]] = []
+    # metoodika v2: põhihinnang on mediaanipõhine paaritatud Δ (kui olemas)
+    d_col, s_col = (
+        ("delta_m_med", "oluline_m_med") if "delta_m_med" in base_pairs.columns else ("delta_m", "oluline_m")
+    )
     b = base_pairs.select(
-        *_KEYS, pl.col("delta_m").alias("d0"), pl.col("oluline_m").alias("s0"), pl.col("enough_m").alias("e0")
+        *_KEYS, pl.col(d_col).alias("d0"), pl.col(s_col).alias("s0"), pl.col("enough_m").alias("e0")
     )
     for name, over in variants.items():
-        res = run(replace(base, **over), None, config.RESULTS / f"tundlikkus_{name}")  # type: ignore[arg-type]
+        res = run(
+            replace(base, **over),  # type: ignore[arg-type]
+            None,
+            config.RESULTS / f"tundlikkus_{name}",
+            unpaired_median_boot=False,
+        )
         v = res["paarid"].select(
             *_KEYS,
-            pl.col("delta_m").alias("d1"),
-            pl.col("oluline_m").alias("s1"),
+            pl.col(d_col).alias("d1"),
+            pl.col(s_col).alias("s1"),
             pl.col("enough_m").alias("e1"),
         )
         j = b.join(v, on=_KEYS, how="inner")

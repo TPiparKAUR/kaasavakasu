@@ -176,3 +176,76 @@ def test_eta_squared_pure_class_effect() -> None:
     assert stats.eta_squared(tbl, np.array([0, 1])) == pytest.approx(1.0)
     # sama grupp -> η² = 0
     assert stats.eta_squared(tbl, np.array([0, 0])) == pytest.approx(0.0)
+
+
+def test_median_estimates_match_brute_force(tmp_path) -> None:  # noqa: ANN001
+    """Mediaanipõhised hinnangud (metoodika v2) võrduvad otse toorpikslitest arvutatuga."""
+    from oks import aggregate, median, pipeline
+
+    used = _used().with_columns(pl.lit("A").alias("seisund_algne"))
+    u = stats.make_units(used)
+    rng = np.random.default_rng(2)
+    e_l, n_l, k_l, x_l = [], [], [], []
+    shift = {1: 0.0, 2: 1.5, 3: 4.0}  # uld -> lisand (hea suurim)
+    for e in range(400, 430):
+        for n in range(6400, 6402):
+            for k, uld in zip(used["kood"], used["uld"], strict=True):
+                m = int(rng.integers(90, 160))
+                x = np.round(rng.gamma(2, 2, m) + shift[uld], 1)
+                x[rng.random(m) < 0.3] = 0
+                e_l.append(np.full(m, e))
+                n_l.append(np.full(m, n))
+                k_l.append(np.full(m, k))
+                x_l.append(x)
+    ex, nx, kx, xv = (np.concatenate(a) for a in (e_l, n_l, k_l, x_l))
+    vdir = tmp_path / "val"
+    vdir.mkdir()
+    grp = pipeline.groupings(used)
+    blk = []
+    for n_km in np.unique(nx):
+        s = nx == n_km
+        aggregate.value_counts(ex[s], kx[s], xv[s]).with_columns(
+            pl.lit(n_km, dtype=pl.Int16).alias("n_km")
+        ).write_parquet(vdir / f"n{n_km}.parquet")
+        for g, arr in grp.items():
+            m = aggregate.segment_medians(ex[s], arr[kx[s]], xv[s])
+            blk.append(
+                pl.DataFrame(m).with_columns(pl.lit(g).alias("grouping"), pl.lit(int(n_km)).alias("n_km"))
+            )
+    p = stats.Params(n_boot=200, min_strata=20)
+    res = stats.analyse_layer_median(pl.concat(blk), median.ValueTable.load(vdir), vdir, u, used, 10.0, p)
+    eco1_hea = np.isin(kx, [10110])
+    cell = (
+        res["lahtrid"]
+        .filter(
+            (pl.col("unit_level") == "okosusteem") & (pl.col("unit_code") == 1) & (pl.col("state") == "hea")
+        )
+        .row(0, named=True)
+    )
+    assert cell["median"] == np.median(xv[eco1_hea])
+    assert cell["median_nz"] == np.median(xv[eco1_hea & (xv != 0)])
+    # paaritatud: stratum = plokk x alam; d = mediaan_hea - mediaan_vilets; w = na nb / (na + nb)
+    num = den = 0.0
+    for e in range(400, 430):
+        for n in range(6400, 6402):
+            b = (ex == e) & (nx == n)
+            xa, xb = xv[b & (kx == 10141)], xv[b & (kx == 10110)]
+            if xa.size >= 100 and xb.size >= 100:
+                w = xa.size * xb.size / (xa.size + xb.size)
+                num += w * (np.median(xb) - np.median(xa))
+                den += w
+    pr = (
+        res["paarid"]
+        .filter(
+            (pl.col("unit_level") == "alam")
+            & (pl.col("unit_code") == 10100)
+            & (pl.col("pair") == "vilets→hea")
+        )
+        .row(0, named=True)
+    )
+    assert pr["delta_m_med"] == pytest.approx(num / den, abs=1e-12)
+    assert pr["delta_u_med"] == np.median(xv[kx == 10110]) - np.median(xv[kx == 10141])
+    assert np.isfinite(pr["ci_u_med_lo"]) and pr["ci_u_med_lo"] <= pr["ci_u_med_hi"]
+    kl = res["klassid"].filter(pl.col("cls") == 2).row(0, named=True)
+    assert kl["median"] == np.median(xv[kx == 10141])
+    assert not res["algklassid"].is_empty()

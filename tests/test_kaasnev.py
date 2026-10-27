@@ -182,3 +182,24 @@ def test_forest_split_into_dry_and_wet() -> None:
         < kaasnev.DISPLAY_ORDER[32]
         < kaasnev.DISPLAY_ORDER[4]
     )
+
+
+def test_median_table_pools_pixels_not_class_medians(tmp_path) -> None:  # noqa: ANN001
+    """Rühma mediaan arvutatakse klasside pikslite ühendist (mitte klasside mediaanidest)."""
+    import numpy as np
+
+    from oks import aggregate, median
+
+    a = np.array([0, 0, 0, 1, 9], dtype=np.float32)  # klass 1: mediaan 0
+    b = np.array([5, 6, 7], dtype=np.float32)  # klass 2: mediaan 6
+    x = np.concatenate([a, b])
+    k = np.array([1] * a.size + [2] * b.size)
+    vdir = tmp_path / "val"
+    vdir.mkdir()
+    aggregate.value_counts(np.full(x.size, 400), k, x).with_columns(
+        pl.lit(6500, dtype=pl.Int16).alias("n_km")
+    ).write_parquet(vdir / "n6500.parquet")
+    group = pl.DataFrame({"kood": [1, 2], "g": ["x", "x"]})
+    out = kaasnev.median_table(median.ValueTable.load(vdir), group, ["g"]).row(0, named=True)
+    assert out["median"] == np.median(x)  # 3.0, mitte (0 + 6) / 2
+    assert out["median_nz"] == np.median(x[x != 0])
