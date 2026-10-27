@@ -52,7 +52,8 @@ def rasterize_attribute(
     Notes
     -----
     Piksel saab polügooni väärtuse, kui selle keskpunkt jääb polügooni sisse
-    (``all_touched=False``). Kattuvate polügoonide korral võidab viimane.
+    (``all_touched=False``). Metoodika v2 vektorireeglid: NULL (NaN) ja ``-1`` -> 0; kattuvate polügoonide
+    korral maksimum. Polügoonist väljas jääb ``nodata`` (aggregeerimisel loetakse see nulliks).
     """
     out.parent.mkdir(parents=True, exist_ok=True)
     tmp = out.with_suffix(".tmp.tif")
@@ -82,10 +83,13 @@ def rasterize_attribute(
                 continue
             vals = np.asarray(fields[0])
             vals = mapper(vals) if mapper else vals.astype("float64")
+            vals = np.where(~np.isfinite(vals) | (vals == -1), 0.0, vals)
+            # GDAL põletab kujundid järjekorras ja viimane võidab: kasvav järjekord annab kattuvusel maksimumi
+            order = np.argsort(vals, kind="stable")
             shapes = [
                 (g, float(v))
-                for g, v in zip(shapely.from_wkb(geoms), vals, strict=True)
-                if g is not None and np.isfinite(v)
+                for g, v in zip(shapely.from_wkb(geoms)[order], vals[order], strict=True)
+                if g is not None
             ]
             if not shapes:
                 continue

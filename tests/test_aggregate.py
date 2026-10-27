@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
+import polars as pl
 import pytest
 import rasterio
 from rasterio.transform import from_origin
@@ -188,3 +189,104 @@ def test_class_stats_cover_classes_without_state(tmp_path: Path, baas: Path, lut
     assert east[names.index("n_valid")] == 100 * 200 - 1
     assert east[names.index("n_zero")] == 100 * 200 - 1 and east[names.index("n_pos")] == 0
     assert west[names.index("sum")] == pytest.approx(2.0 * 100 * 200)
+
+
+def test_extent_outside_service_raster_is_nodata_zero(tmp_path: Path, baas: Path, lut: np.ndarray) -> None:
+    """K7: baaskaardi pikslid väljaspool teenuse ruudustikku on NoData -> null (kui NoData on null)."""
+    arr = np.full((200, 100), 3.0, dtype=np.float32)  # katab ainult lääne poole (400000..401000)
+    src = tmp_path / "west.tif"
+    _write(src, arr, 10.0, 400_000.0, 6_501_000.0, -9999.0)
+    excl = aggregate.aggregate_layer(aggregate.LayerSpec("t", "t.tif"), src, baas, lut, N_CLASSES)
+    assert excl["n"].sum() == 200 * 100
+    incl = aggregate.aggregate_layer(
+        aggregate.LayerSpec("t", "t.tif", zero_values=(-9999.0,)), src, baas, lut, N_CLASSES
+    )
+    assert incl["n"].sum() == 200 * 200
+    east = incl.filter(incl["cls"] == 1)
+    assert east["n"].sum() == 200 * 100 and east["sum"].sum() == 0
+
+
+def test_extended_grid_keeps_lattice_with_float_resolution(tmp_path: Path) -> None:
+    """Ebatäpne piksel (10.000000000000002 m) ja nihutatud algpunkt: laiendus jääb samasse võrgustikku."""
+    src = tmp_path / "odd.tif"
+    with rasterio.open(
+        src,
+        "w",
+        driver="GTiff",
+        height=10,
+        width=10,
+        count=1,
+        dtype="float32",
+        crs="EPSG:3301",
+        transform=from_origin(400_010.0, 6_500_900.0, 10.000000000000002, 10.000000000000002),
+        nodata=-9999.0,
+    ) as ds:
+        ds.write(np.ones((10, 10), dtype=np.float32), 1)
+    with rasterio.open(src) as ds:
+        grid, c0, r0 = aggregate.extended_grid(ds, (400_000.0, 6_500_000.0, 400_200.0, 6_501_000.0))
+    assert (c0, r0) == (-1, -10)
+    assert grid.width == 20 and grid.height == 100
+    assert grid.transform.c == pytest.approx(400_000.0) and grid.transform.f == pytest.approx(6_501_000.0)
+
+
+def test_float32_minimum_sentinel_is_zero(tmp_path: Path, baas: Path, lut: np.ndarray) -> None:
+    """Tabeli NoData (float64 kujul) tabab float32 sentinel-väärtust täpselt."""
+    nd = -3.399999952144364e38
+    arr = np.full((200, 200), 2.0, dtype=np.float32)
+    arr[:, :50] = np.float32(nd)
+    src = tmp_path / "f32.tif"
+    _write(src, arr, 10.0, 400_000.0, 6_501_000.0, float(np.float32(nd)))
+    df = aggregate.aggregate_layer(
+        aggregate.LayerSpec("t", "t.tif", zero_values=(nd,)), src, baas, lut, N_CLASSES
+    )
+    assert df["n"].sum() == 200 * 200
+    assert df["sum"].sum() == pytest.approx(2.0 * 200 * 150)
+
+
+def test_segment_medians_match_numpy() -> None:
+    rng = np.random.default_rng(3)
+    n = 20_000
+    e = rng.integers(0, 4, n)
+    g = rng.integers(0, 5, n)
+    x = np.where(rng.random(n) < 0.4, 0.0, rng.integers(-3, 9, n).astype(np.float64))
+    m = aggregate.segment_medians(e, g, x)
+    for i in range(m["n"].size):
+        sel = (e == m["e_km"][i]) & (g == m["group"][i])
+        assert m["n"][i] == sel.sum()
+        assert m["median"][i] == np.median(x[sel])
+        nz = x[sel][x[sel] != 0]
+        assert m["n_nz"][i] == nz.size
+        assert (np.isnan(m["median_nz"][i]) and nz.size == 0) or m["median_nz"][i] == np.median(nz)
+
+
+def test_value_table_and_block_medians_are_exact(tmp_path: Path, baas: Path, lut: np.ndarray) -> None:
+    """Sagedustabelist taastatud mediaan ja plokimediaanid võrduvad np.median-iga toorpikslitel."""
+    rng = np.random.default_rng(7)
+    arr = rng.random((200, 200)).astype(np.float32)
+    arr[rng.random((200, 200)) < 0.3] = 0
+    src = tmp_path / "svc.tif"
+    _write(src, arr, 10.0, 400_000.0, 6_501_000.0, -9999.0)
+    grp = np.full(65536, -1, dtype=np.int64)
+    grp[10110], grp[10141] = 1, 2
+    blk: list[pl.DataFrame] = []
+    vdir = tmp_path / "val"
+    aggregate.aggregate_layer(
+        aggregate.LayerSpec("t", "t.tif"),
+        src,
+        baas,
+        lut,
+        N_CLASSES,
+        val_dir=vdir,
+        groupings={"g": grp},
+        blk_med=blk,
+    )
+    vt = pl.read_parquet(vdir / "*.parquet")
+    assert vt["n"].sum() == 200 * 200
+    west = vt.filter(vt["kood"] == 10110).sort("value")
+    vals = np.repeat(west["value"].to_numpy(), west["n"].to_numpy())
+    assert np.median(vals) == np.median(arr[:, :100])
+    bm = pl.concat(blk)
+    r = bm.filter((bm["e_km"] == 401) & (bm["n_km"] == 6500) & (bm["group"] == 2)).row(0, named=True)
+    block = arr[:100, 100:].astype(np.float64)
+    assert r["n"] == block.size and r["median"] == np.median(block)
+    assert r["median_nz"] == np.median(block[block != 0])

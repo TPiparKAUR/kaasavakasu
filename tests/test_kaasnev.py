@@ -128,6 +128,12 @@ def test_zero_values_policy() -> None:
     assert catalog.zero_values("seened_hind_2022_10m", 0.0) == (0.0,)
     assert catalog.zero_values("ohusaaste_puhverdusvoime_2022_5m", 0.0) == (0.0, 255.0)
     assert catalog.zero_values("mustikad_pohlad_saagikus_2020_10m", 9999.0) == ()
+    # metoodika v2: NoData on kehtiv null kõigis kihtides peale kolme erandi
+    assert catalog.zero_values("c_tonn_per_ha_final_2022_10m", -1.0) == (-1.0,)
+    assert catalog.zero_values("seened_saagikus_2020_10m", -3.399999952144364e38) == (-3.399999952144364e38,)
+    assert catalog.zero_values("pohlad_saagikus_2020_10m", -128.0) == ()
+    assert catalog.zero_values("mustikad_pohlad_hind_2022_10m", 9999.0) == ()
+    assert catalog.zero_values("elupaigahuve_pakkumine_2022_10m", None) == ()
 
 
 def test_strength_scale() -> None:
