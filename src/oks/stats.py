@@ -451,7 +451,6 @@ def _block_medians(blk: pl.DataFrame, u: Units) -> pl.DataFrame:
 
 def analyse_layer_median(
     blk: pl.DataFrame,
-    vt: median.ValueTable,
     val_dir: Path,
     u: Units,
     used: pl.DataFrame,
@@ -472,8 +471,9 @@ def analyse_layer_median(
     ----------
     blk
         Plokimediaanid (``pipeline.blkmed_path``).
-    vt, val_dir
-        Sagedustabel (``median.ValueTable``) ja selle kaust (bootstrapi jaoks klastri kaupa).
+    val_dir
+        Sagedustabeli kaust (``pipeline.val_path``). ``median.ValueTable`` loetakse siin ja vabastatakse enne
+        bootstrapi (suurte kihtide mälu); bootstrap loeb ühiku ja seisundi read eraldi.
     u, used
         Ühikud ja ``baas.class_lut`` klassitabel (``idx, kood, seisund_algne``).
     res_m, p, weights
@@ -499,6 +499,7 @@ def analyse_layer_median(
         return [int(k) for k in kood[m & (u.cls_state[idx] == s)]]
 
     # ---------- ühiku ja seisundi täpsed mediaanid ----------
+    vt = median.ValueTable.load(val_dir)
     cells: dict[tuple[int, int], tuple[int, float, int, float]] = {}
     koods: dict[tuple[int, int], list[int]] = {}
     for ui in range(nu):
@@ -509,6 +510,40 @@ def analyse_layer_median(
                 continue
             cells[(ui, s)] = (n, m, *vt.median(ks, nonzero=True))
             koods[(ui, s)] = ks
+
+    cls_rows = []
+    for i, k in zip(idx, kood, strict=True):
+        _n, m = vt.median([int(k)])
+        nnz, mnz = vt.median([int(k)], nonzero=True)
+        cls_rows.append({"cls": int(i), "median": m, "n_nz": nnz, "median_nz": mnz})
+
+    alg_rows: list[dict[str, object]] = []
+    letters = used["seisund_algne"].to_numpy()
+    for ui in range(nu):
+        level = "okosusteem" if ui < ne else "alam"
+        code = u.eco_codes[ui] if ui < ne else u.alam_codes[ui - ne]
+        in_u = (u.cls_eco[idx] == ui) if ui < ne else (u.cls_alam[idx] == ui - ne)
+        for letter in sorted(set(letters[in_u].tolist())):
+            m_l = in_u & (letters == letter)
+            ks = [int(k) for k in kood[m_l]]
+            n, m = vt.median(ks)
+            if n == 0:
+                continue
+            nnz, mnz = vt.median(ks, nonzero=True)
+            alg_rows.append(
+                {
+                    "unit_level": level,
+                    "unit_code": int(code),
+                    "seisund_algne": str(letter),
+                    "state": STATES[int(u.cls_state[idx[m_l][0]])],
+                    "n": n,
+                    "mean": vt.total(ks) / n,
+                    "median": m,
+                    "n_nz": nnz,
+                    "median_nz": mnz,
+                }
+            )
+    del vt
 
     # ---------- plokimediaanid ----------
     bl = _block_medians(blk, u) if not blk.is_empty() else pl.DataFrame()
@@ -582,14 +617,11 @@ def analyse_layer_median(
                 rows["n_km"].to_numpy().astype(np.int64),
                 p.cluster_blocks,
             )[0]
-            agg = (
-                pl.DataFrame({"cl": cl, "value": rows["value"], "n": rows["n"].cast(pl.Int64)})
-                .group_by("cl", "value")
-                .agg(pl.col("n").sum())
-            )
+            # korduvad (klaster, väärtus) read on lubatud: kumulatiivne loendus annab sama täpse mediaani
             boots[key] = median.cluster_boot_medians(
-                agg["cl"].to_numpy(), agg["value"].to_numpy(), agg["n"].to_numpy(), W
+                cl.astype(np.int32), rows["value"].to_numpy(), rows["n"].to_numpy().astype(np.int64), W
             )
+            del rows, cl
 
     pair_rows: list[dict[str, object]] = []
     for ui in range(nu):
@@ -668,38 +700,6 @@ def analyse_layer_median(
             row.update({f"mq{qn}{suf}": float(v) for qn, v in zip(QNAMES, q, strict=True)})
         cell_rows.append(row)
 
-    cls_rows = []
-    for i, k in zip(idx, kood, strict=True):
-        _n, m = vt.median([int(k)])
-        nnz, mnz = vt.median([int(k)], nonzero=True)
-        cls_rows.append({"cls": int(i), "median": m, "n_nz": nnz, "median_nz": mnz})
-
-    alg_rows: list[dict[str, object]] = []
-    letters = used["seisund_algne"].to_numpy()
-    for ui in range(nu):
-        level = "okosusteem" if ui < ne else "alam"
-        code = u.eco_codes[ui] if ui < ne else u.alam_codes[ui - ne]
-        in_u = (u.cls_eco[idx] == ui) if ui < ne else (u.cls_alam[idx] == ui - ne)
-        for letter in sorted(set(letters[in_u].tolist())):
-            m_l = in_u & (letters == letter)
-            ks = [int(k) for k in kood[m_l]]
-            n, m = vt.median(ks)
-            if n == 0:
-                continue
-            nnz, mnz = vt.median(ks, nonzero=True)
-            alg_rows.append(
-                {
-                    "unit_level": level,
-                    "unit_code": int(code),
-                    "seisund_algne": str(letter),
-                    "state": STATES[int(u.cls_state[idx[m_l][0]])],
-                    "n": n,
-                    "mean": vt.total(ks) / n,
-                    "median": m,
-                    "n_nz": nnz,
-                    "median_nz": mnz,
-                }
-            )
     return {
         "paarid": pl.DataFrame(pair_rows),
         "lahtrid": pl.DataFrame(cell_rows),

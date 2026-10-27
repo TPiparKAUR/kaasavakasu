@@ -180,7 +180,7 @@ def test_eta_squared_pure_class_effect() -> None:
 
 def test_median_estimates_match_brute_force(tmp_path) -> None:  # noqa: ANN001
     """Mediaanipõhised hinnangud (metoodika v2) võrduvad otse toorpikslitest arvutatuga."""
-    from oks import aggregate, median, pipeline
+    from oks import aggregate, pipeline
 
     used = _used().with_columns(pl.lit("A").alias("seisund_algne"))
     u = stats.make_units(used)
@@ -213,7 +213,7 @@ def test_median_estimates_match_brute_force(tmp_path) -> None:  # noqa: ANN001
                 pl.DataFrame(m).with_columns(pl.lit(g).alias("grouping"), pl.lit(int(n_km)).alias("n_km"))
             )
     p = stats.Params(n_boot=200, min_strata=20)
-    res = stats.analyse_layer_median(pl.concat(blk), median.ValueTable.load(vdir), vdir, u, used, 10.0, p)
+    res = stats.analyse_layer_median(pl.concat(blk), vdir, u, used, 10.0, p)
     eco1_hea = np.isin(kx, [10110])
     cell = (
         res["lahtrid"]

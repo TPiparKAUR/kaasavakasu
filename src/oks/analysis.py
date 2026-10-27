@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 import polars as pl
 
-from . import baas, catalog, config, fetch, median, mixing, pipeline, stats
+from . import baas, catalog, config, fetch, mixing, pipeline, stats
 
 log = logging.getLogger(__name__)
 
@@ -354,11 +354,9 @@ def run(
         out = stats.analyse_layer(tbl, u, res_m, params, W)
         vdir, bpath = pipeline.val_path(r["id"]), pipeline.blkmed_path(r["id"])
         if vdir.is_dir() and bpath.exists() and not tbl.is_empty():
-            vt = median.ValueTable.load(vdir)
             med = stats.analyse_layer_median(
-                pl.read_parquet(bpath), vt, vdir, u, used, res_m, params, W, unpaired_median_boot
+                pl.read_parquet(bpath), vdir, u, used, res_m, params, W, unpaired_median_boot
             )
-            del vt
             out = _join_median(out, med)
             if not out["algklassid"].is_empty():
                 alg_tabs.append(out["algklassid"].with_columns(pl.lit(r["id"]).alias("layer_id")))

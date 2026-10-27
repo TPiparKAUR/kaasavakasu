@@ -137,7 +137,10 @@ class ValueTable:
 
 
 def cluster_boot_medians(
-    cluster: NDArray[np.int64], value: NDArray[np.floating], count: NDArray[np.int64], W: NDArray[np.float64]
+    cluster: NDArray[np.integer],
+    value: NDArray[np.floating],
+    count: NDArray[np.int64],
+    W: NDArray[np.float64],
 ) -> NDArray[np.float64]:
     """Täpsed bootstrap-mediaanid: kordus ``b`` võtab klastri ``c`` piksleid ``W[b, c]`` korda.
 
@@ -157,8 +160,10 @@ def cluster_boot_medians(
     if value.size == 0:
         return np.full(B, np.nan)
     vals, vidx = np.unique(value, return_inverse=True)
+    vidx = vidx.astype(np.int32)
     K = vals.size
     cl_u, cl_i = np.unique(cluster, return_inverse=True)
+    cl_i = cl_i.astype(np.int32)
     Wc = W[:, cl_u]  # (B, klastrid)
     tot = Wc @ np.bincount(cl_i, weights=count, minlength=cl_u.size)
     rank_lo = np.floor((tot - 1) / 2)
