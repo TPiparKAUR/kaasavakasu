@@ -221,7 +221,9 @@ Kehtivus on sama mis plokitabelis.
 
 `oks.analysis.sensitivity` kordab analüüsi teiste klastri suurustega (5 ja 20 km), minimaalse alaga (0,25 ja 4 ha) ja teise
 juhusliku seemnega. Metoodika v2-s võrreldakse mediaanipõhist paaritatud hinnangut (`delta_m_med`, `oluline_m_med`).
-Tulemused on `data/tulemused/tundlikkus.csv` ja kokkuvõte `docs/tulemused.md` § 6.
+Tulemused on `data/tulemused/tundlikkus.csv` ja kokkuvõte `docs/tulemused.md` § 6: põhijooksu olulistest hinnangutest säilis
+oluliseks sama märgiga 90–100 % (ökosüsteem) ja 86–100 % (alamökosüsteem); madalaim on variant „minimaalne ala 4 ha“, kus
+880 alamökosüsteemi hinnangul ei piisa andmetest. Δ astakkorrelatsioon põhijooksuga ≥ 0,86.
 
 ## 7. Jämedad ruudustikud: segumudel (uuriv, võrdluseks)
 

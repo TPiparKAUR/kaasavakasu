@@ -33,7 +33,7 @@ Ametlikus tabelis on 136 kihti, neist `eval = TRUE`: 32 (1 baaskaart + 35 teenus
 | Mikrokliima reguleerimine | Mikrokliima reguleerimine (temperatuuri erinevuse määr) | kliimaregulatsioon_2022_5m | raster | 5 | Järjestus | muu | suhtarv (klassi põhine) | ELME2 | Mikrokliima_regulatsioon/kliimaregulatsioon_2022_5m.tif |
 | Puhverdavad teenused | Fosfori mullaerosiooniga ärakande hind | erosioon_p_eur_ha_a_2022_10m | raster | 10 | Pidev | rahaline | EUR/ha/a | ELME2 | Puhverdavad_teenused/erosioon_P_eur_ha_a_2022_10m.tif |
 | Puhverdavad teenused | Fosfori ärakanne | erosioon_p_kg_ha_a_2022_10m | raster | 10 | Pidev | biofüüsikaline | kg/ha/a | ELME2 | Puhverdavad_teenused/erosioon_P_kg_ha_a_2022_10m.tif |
-| Puhverdavad teenused | Lammimuldade taastamise kulu | lamm_grd1000_am_drained_2022 | vektor |  |  | rahaline | EUR (väli lammide_taastamise_kulu) | ELME2 | Puhverdavad_teenused/lamm_grd1000_am_drained_2022.gpkg |
+| Puhverdavad teenused | Lammimuldade taastamise kulu | lamm_grd1000_am_drained_2022 | vektor |  |  | rahaline | EUR/ha/a (väli lammide_taastamise_kulu) | ELME2 | Puhverdavad_teenused/lamm_grd1000_am_drained_2022.gpkg |
 | Puhverdavad teenused | Orgaanilise süsiniku ärakanne | erosioon_c_kg_ha_a_2022_10m | raster | 10 | Pidev | biofüüsikaline | kg/ha/a | ELME2 | Puhverdavad_teenused/erosioon_C_kg_ha_a_2022_10m.tif |
 | Puhverdavad teenused | Vee puhastamise potentsiaal kaldapuhvrite poolt | vee_puhastamise_potentsiaal_p_kg_ha_a_2022_930m | raster | 930 | Pidev | biofüüsikaline | kg/ha/a | ELME2 | Puhverdavad_teenused/vee_puhastamise_potentsiaal_P_kg_ha_a_2022_930m.tif |
 | Puhverdavad teenused | Vee puhastamise potentsiaali kaldapuhvrite poolt rahaline väärtus | vee_puhastamise_potentsiaal_p_eur_ha_2022_930m | raster | 930 | Pidev | rahaline | EUR/ha | ELME2 | Puhverdavad_teenused/vee_puhastamise_potentsiaal_P_eur_ha_2022_930m.tif |
@@ -68,7 +68,7 @@ Ametlikus tabelis on 136 kihti, neist `eval = TRUE`: 32 (1 baaskaart + 35 teenus
 * **Mikrokliima reguleerimine (temperatuuri erinevuse määr)** (`kliimaregulatsioon_2022_5m`): VÄIKSEM väärtus = ühtlasem temperatuur = parem regulatsioon; arvutatud baaskaardi klassi kohta
 * **Fosfori mullaerosiooniga ärakande hind** (`erosioon_p_eur_ha_a_2022_10m`): Fosforikao kulu; suurem väärtus = suurem kulu
 * **Fosfori ärakanne** (`erosioon_p_kg_ha_a_2022_10m`): Fosfori ärakanne: suurem väärtus = suurem ärakanne
-* **Lammimuldade taastamise kulu** (`lamm_grd1000_am_drained_2022`): 1 km ruudustik, ainult lammiruudud (am_osa > 0); väärtus väheneb kuivendatud pindalaga, seos seisundiga kaudne. Uuriv segumudel · Tabeli märkus: Lamminiidud, märjad niidud kui olulised kohad sellele teenusele
+* **Lammimuldade taastamise kulu** (`lamm_grd1000_am_drained_2022`): 1 km ruudustik, väärtus ainult lammiruutudes (am_osa > 0); väärtus väheneb kuivendatud pindalaga, seos seisundiga kaudne · Tabeli märkus: Lamminiidud, märjad niidud kui olulised kohad sellele teenusele
 * **Orgaanilise süsiniku ärakanne** (`erosioon_c_kg_ha_a_2022_10m`): Orgaanilise süsiniku ärakanne: suurem väärtus = suurem ärakanne
 * **Vee puhastamise potentsiaal kaldapuhvrite poolt** (`vee_puhastamise_potentsiaal_p_kg_ha_a_2022_930m`): Ainult kaldapuhvrid; eraldusvõime 930 m
 * **Vee puhastamise potentsiaali kaldapuhvrite poolt rahaline väärtus** (`vee_puhastamise_potentsiaal_p_eur_ha_2022_930m`): Ainult kaldapuhvrid; eraldusvõime 930 m
