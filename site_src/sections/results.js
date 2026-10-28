@@ -32,8 +32,8 @@
     if (!S.kt) ktInit();
     const k = S.kt, Kd = K();
     const card = h('section', { class: 'card' }, root);
-    h('h2', {}, card, 'Tulemustabel: teenuse keskväärtus ökosüsteemitüübi ja seisundi kaupa');
-    h('p', { class: 'sub' }, card, 'Iga rida on ELME2 ökosüsteemitüüp ja seisundiklass (või suur ökosüsteem). Väärtus on teenuse keskmine kogu klassi kehtiva pindala kohta, nullid kaasa arvatud. Tabel vastab Keskkonnaagentuuri lähtekasule; sama sisu on Exceli failis.');
+    h('h2', {}, card, 'Tulemustabel: teenuse mediaan ökosüsteemitüübi ja seisundi kaupa');
+    h('p', { class: 'sub' }, card, 'Iga rida on ELME2 ökosüsteemitüüp ja seisundiklass (või suur ökosüsteem). Väärtus on teenuse täpne mediaan kogu klassi pindala kohta, nullid kaasa arvatud (pooled pikslid on sellest väiksemad, pooled suuremad). Keskmine ja mediaan kohtades, kus teenus esineb, on lahtri kohtspikris. Tabel vastab Keskkonnaagentuuri lähtekasule; sama sisu on Exceli failis.');
     const bar = h('div', { class: 'tools' }, card);
     h('span', { class: 'tl' }, bar, 'Rida');
     const sg = h('div', { class: 'seg', role: 'group', 'aria-label': 'Tabeli tüüp' }, bar);
@@ -97,18 +97,19 @@
     tb.addEventListener('pointermove', (e) => { const td = e.target.closest('td[data-r]'); if (!td) { tipHide(); return; } const r = rows[+td.dataset.r], x = lays[+td.dataset.c]; tipShow((tp) => cellTip(tp, r, x), e, td); });
     tb.addEventListener('pointerleave', tipHide);
     statusLegend(card);
-    h('p', { class: 'note' }, card, '† seos seisundiga on osaliselt definitsiooniline; ‡ uuriv segumudel (ainult suurte ökosüsteemide tabelis). Rahalised kihid on osalt riigi aastase kogusumma jaotus, osalt varu ja osalt aastane voog; ära summeeri teenuseid ega biofüüsikalist ja rahalist versiooni (vt Kvalitatiivne).');
+    h('p', { class: 'note' }, card, '† seos seisundiga on osaliselt definitsiooniline; ‡ madalama lahutusvõimega kiht (930 m / 1 km), viidud 10 m lahutusvõimele; § erandkiht: puuduvad andmed on valimist välja jäetud (mustikad, pohlad, kasemahl). Rahalised kihid on osalt riigi aastase kogusumma jaotus, osalt varu ja osalt aastane voog; ära summeeri teenuseid ega biofüüsikalist ja rahalist versiooni (vt Kvalitatiivne).');
   }
   function cellTip(tp, r, x) {
     const k = S.kt, tuubid = k.view === 'tuubid', cells = tuubid ? r[6] : r[3], c = cells[x.i];
     tl(tp, 'm', `${tuubid ? r[2] : (D.K.suured_nimed[String(r[0])] || D.K.eco[String(r[0])])} · ${tuubid ? r[4] : r[1]}`);
     tl(tp, 'm', `${x.l.nimi}${flagsOf(x.l)}`);
     if (!c) { tl(tp, 'm', 'andmeid pole'); return; }
-    const [mean, sd, kate, esineb, st] = c, name = D.K.staatused[st];
+    const [med, mean, kate, esineb, st, mednz] = c, name = D.K.staatused[st];
     if (name === 'ei paku') { tl(tp, 'v', 'ei paku teenust'); tl(tp, 'm', `nullist erinevaid piksleid ${esineb === null ? '–' : nf(2).format(esineb * 100)} % kehtivatest (lävi 1 %)`); return; }
-    if (mean === null) { tl(tp, 'v', 'teenust ei hinnatud'); tl(tp, 'm', `kehtivaid piksleid ${kate === null ? '–' : nf(1).format(kate * 100)} % klassist`); return; }
-    tl(tp, 'v', `${fmt(mean)} ${unitShort(x.l.uhik)}`);
-    if (sd !== null) tl(tp, 'm', `pikslitaseme SD ${fmt(sd)} (kirjeldav, mitte ebakindlus)`);
+    if (med === null) { tl(tp, 'v', 'teenust ei hinnatud'); tl(tp, 'm', `kehtivaid piksleid ${kate === null ? '–' : nf(1).format(kate * 100)} % klassist`); return; }
+    tl(tp, 'v', `mediaan ${fmt(med)} ${unitShort(x.l.uhik)}`);
+    tl(tp, 'm', `keskmine ${fmt(mean)} · mediaan kohtades, kus teenus esineb: ${fmt(mednz)}`);
     if (kate !== null) tl(tp, 'm', `kehtivaid piksleid ${nf(1).format(kate * 100)} %; nullist erinevaid ${nf(0).format((esineb || 0) * 100)} %`);
-    if (name === 'uuriv (segumudel)') tl(tp, 'm', 'segumudeli hinnang ökosüsteemi tasemel (uuriv)');
+    if (x.l.madal_lahutus) tl(tp, 'm', '‡ madalama lahutusvõimega kiht, viidud 10 m lahutusvõimele');
+    if (x.l.nodata_valja) tl(tp, 'm', '§ erandkiht: puuduvad andmed on valimist välja jäetud');
   }

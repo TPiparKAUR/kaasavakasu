@@ -12,7 +12,18 @@ from . import andmetabel, config, export, kaasnev_export
 
 #: ``site_src/sections`` failid ``app.js`` märgendi ``/*@@SECTIONS@@*/`` asemele (samas sulundis).
 SECTION_FILES = ("common.js", "home.js", "results.js", "scenario.js", "quality.js", "brief.js")
-DATA_FILES = ("meta", "paarid", "lahtrid", "klassid", "jaotused", "kaasnev", "tendus", "nouded")
+DATA_FILES = (
+    "meta",
+    "paarid",
+    "lahtrid",
+    "klassid",
+    "jaotused",
+    "kaasnev",
+    "tendus",
+    "nouded",
+    "algklassid",
+    "segumudel",
+)
 XLSX_NAME = "andmetabel_kaasneva_kasu.xlsx"
 
 

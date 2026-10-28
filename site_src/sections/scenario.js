@@ -52,7 +52,7 @@
     c.ha = Number.isFinite(c.ha) && c.ha > 0 ? c.ha : 1000;
     const card = h('section', { class: 'card' }, root);
     h('h2', {}, card, 'Stsenaarium: mida annaks seisundi paranemine kindlal pindalal?');
-    h('p', { class: 'sub' }, card, 'Vali ökosüsteemitüüp, praegune ja eesmärgiks olev seisund ning pindala. Tulemus on teenuse keskväärtuste vahe hektari kohta korrutatud pindalaga. See on kahe seisundi võrdlus Eesti tasandil, mitte prognoos konkreetse koha kohta ega ajastus (taastumine võtab aega).');
+    h('p', { class: 'sub' }, card, 'Vali ökosüsteemitüüp, praegune ja eesmärgiks olev seisund ning pindala. Tabel näitab teenuse mediaane ja nende vahet hektari kohta. Pindalaga korrutamiseks kasutatakse keskmiste vahet, sest ainult keskmine annab koguhulga (mediaan korda pindala ei ole koguhulk). See on kahe seisundi võrdlus Eesti tasandil, mitte prognoos konkreetse koha kohta ega ajastus (taastumine võtab aega).');
     const ctl = h('div', { class: 'frow' }, card);
     const g1 = h('div', { class: 'fgrp wide' }, ctl); h('label', { for: 'cu', class: 'lbl' }, g1, 'Ökosüsteem / tüüp');
     const su = h('select', { id: 'cu' }, g1); let lastG = null, og = null;
@@ -72,7 +72,7 @@
     sub.append(`Võrdluse pindalad (baaskaart): ${c.from} ${nf(0).format(A.area)} ha, ${c.to} ${nf(0).format(B.area)} ha. `);
     if (c.ha > A.area) h('b', { class: 'warnx' }, sub, `Sisestatud pindala ületab praeguse seisundi pindala Eestis (${nf(0).format(A.area)} ha).`);
     const sc = h('div', { class: 'tblwrap' }, card), t = h('table', { class: 'data scn' }, sc), hd = h('tr', {}, h('thead', {}, t));
-    for (const x of ['Loodushüve', 'Ühik', c.from, c.to, 'Muutus hektari kohta', `Muutus ${nf(0).format(c.ha)} ha kohta`, 'Hüve', 'Paaritatud hinnang (kontroll)', 'Tähelepanek']) h('th', {}, hd, x);
+    for (const x of ['Loodushüve', 'Ühik', `${c.from} (mediaan)`, `${c.to} (mediaan)`, 'Mediaanide vahe hektari kohta', 'Keskmiste vahe hektari kohta', `Muutus ${nf(0).format(c.ha)} ha kohta (keskmiste järgi)`, 'Hüve', 'Paaritatud hinnang (kontroll)', 'Tähelepanek']) h('th', {}, hd, x);
     const tb = h('tbody', {}, t), Kd = K(), pair = `${c.from}→${c.to}`;
     for (const ind of Kd.indikaatorid) {
       for (const lid of ind.kihid) {
@@ -84,11 +84,16 @@
         h('td', {}, tr, unitShort(L.uhik) || '–');
         const fail = (v) => v.v === null;
         h('td', { class: `num ${a.cls}` }, tr, a.txt); h('td', { class: `num ${b.cls}` }, tr, b.txt);
-        if (fail(a) || fail(b)) { for (let i = 0; i < 4; i++) h('td', {}, tr, '–'); h('td', {}, tr, a.st === ST.NONE && b.st === ST.NONE ? 'mõlemas seisundis ei paku' : 'ühes seisundis puudub'); continue; }
-        const d = b.v - a.v; h('td', { class: 'num strong' }, tr, d === 0 ? '0' : `${d > 0 ? '+' : '−'}${fmt(Math.abs(d))}`);
+        if (fail(a) || fail(b)) { for (let i = 0; i < 5; i++) h('td', {}, tr, '–'); h('td', {}, tr, a.st === ST.NONE && b.st === ST.NONE ? 'mõlemas seisundis ei paku' : 'ühes seisundis puudub'); continue; }
+        const signed = (v) => (v === 0 ? '0' : `${v > 0 ? '+' : '−'}${fmt(Math.abs(v))}`);
+        const dm = b.v - a.v; h('td', { class: 'num strong' }, tr, signed(dm));
+        const d = a.mean !== null && b.mean !== null ? b.mean - a.mean : null;
+        h('td', { class: 'num' }, tr, d === null ? '–' : signed(d));
         const tu = additiveUnit(L);
-        h('td', { class: 'num strong' }, tr, tu ? `${d > 0 ? '+' : d < 0 ? '−' : ''}${fmt(Math.abs(d) * c.ha)} ${tu}` : '–');
-        const better = d === 0 ? null : ind.suund === 'suurem_parem' ? d > 0 : d < 0;
+        h('td', { class: 'num strong' }, tr, tu && d !== null ? `${d > 0 ? '+' : d < 0 ? '−' : ''}${fmt(Math.abs(d) * c.ha)} ${tu}` : '–');
+        // suund keskmiste järgi (sama mis koguhulgal); kui keskmist pole, mediaanide järgi
+        const dd = d === null ? dm : d;
+        const better = dd === 0 ? null : ind.suund === 'suurem_parem' ? dd > 0 : dd < 0;
         const hv = h('td', {}, tr); h('span', { class: `chg ${better === null ? '' : better ? 'up' : 'down'}` }, hv, better === null ? 'muutus puudub' : better ? '▲ kasvab' : '▼ väheneb');
         const ev = evidenceFor(u, lid, pair), te = h('td', {}, tr);
         if (ev && ev.hinnang) { h('span', { class: `pill ${ev.oluline ? 'sig' : ''}` }, te, `${ev.hinnang}: ${sgnRel(ev.rel)}${ev.oluline ? ' · oluline' : ' · ei ole oluline'}`); } else h('span', { class: 'muted' }, te, '–');
@@ -98,11 +103,12 @@
         if (ind.tuup === 'indeks' || ind.tuup === 'skoor') pill(notes, ind.tuup, 'pinfo', 'Ei ole liidetav hektarite kaupa');
         if (L.roll === 'raha' && /^piiratud/.test(ind.kulukasu)) pill(notes, 'kogusumma jaotus', 'warn', ind.kulukasu);
         if (L.definitsiooniline) pill(notes, '† definitsiooniline', 'warn', 'Seos seisundiga on osaliselt definitsiooniline');
-        if (L.uuriv) pill(notes, '‡ uuriv', 'warn', 'Segumudeli hinnang');
+        if (L.madal_lahutus) pill(notes, '‡ madalam lahutusvõime', 'warn', 'Kiht on 930 m / 1 km lahutusvõimega ja viidud 10 m lahutusvõimele');
+        if (L.nodata_valja) pill(notes, '§ erandkiht', 'pinfo', 'Puuduvad andmed on valimist välja jäetud');
         if (L.roll === 'raha' && /hind kokku/.test(ind.kulukasu + L.tabeli_markus)) pill(notes, 'hind kokku leppida', 'warn', 'Kihitabeli märkus');
       }
     }
-    h('p', { class: 'note' }, card, 'Muutus = eesmärgiseisundi keskmine − praeguse seisundi keskmine (kogu klassi kehtiva pindala kohta, nullid kaasa arvatud). Ära summeeri ridu: biofüüsikaline ja rahaline versioon on sama hüve; rahalised kihid on osalt riigi aastase kogusumma jaotus (muutust ei teki), osalt varu (EUR) ja osalt aastane voog (EUR/a). Paaritatud hinnang on sama seisundipaari erinevus samas 1 km plokis ja alamökosüsteemis; kui see erineb oluliselt tabeli vahest, mõjutab erinevust asukoht, mitte seisund.');
+    h('p', { class: 'note' }, card, 'Mediaanide vahe näitab tüüpilise koha muutust. Pindala kohta muutus = (eesmärgiseisundi keskmine − praeguse seisundi keskmine) × pindala (kogu klassi pindala kohta, nullid kaasa arvatud). Ära summeeri ridu: biofüüsikaline ja rahaline versioon on sama hüve; rahalised kihid on osalt riigi aastase kogusumma jaotus (muutust ei teki), osalt varu (EUR) ja osalt aastane voog (EUR/a). Paaritatud hinnang on sama seisundipaari erinevus samas 1 km plokis ja alamökosüsteemis; kui see erineb oluliselt tabeli vahest, mõjutab erinevust asukoht, mitte seisund.');
     statusLegend(card);
   }
   function sgnRel(r) { return r === null || r === undefined ? '–' : `${r > 0 ? '+' : r < 0 ? '−' : ''}${nf(0).format(Math.abs(r) * 100)} %`; }

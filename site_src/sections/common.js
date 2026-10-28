@@ -13,15 +13,15 @@
     }
     return D.kx;
   }
-  /** Rakk (mean, sd, kate, esineb_osa, staatus) → { v, st, cls } kuvamiseks. */
+  /** Rakk (mediaan, keskmine, kate, esineb_osa, staatus, mediaan > 0) → { v (mediaan), mean, st, cls } kuvamiseks. */
   function cellView(c) {
-    if (!c) return { v: null, st: null, txt: '', cls: 'na' };
-    const [mean, , , , st] = c;
-    if (st === ST.NONE) return { v: null, st, txt: 'ei paku', cls: 'none' };
-    if (st === ST.MISS || mean === null) return { v: null, st, txt: '–', cls: 'miss' };
-    return { v: mean, st, txt: fmt(mean), cls: st === ST.PART ? 'part' : st === ST.MIX ? 'mix' : 'ok' };
+    if (!c) return { v: null, mean: null, st: null, txt: '', cls: 'na' };
+    const [med, mean, , , st] = c;
+    if (st === ST.NONE) return { v: null, mean, st, txt: 'ei paku', cls: 'none' };
+    if (st === ST.MISS || med === null) return { v: null, mean, st, txt: '–', cls: 'miss' };
+    return { v: med, mean, st, txt: fmt(med), cls: st === ST.PART ? 'part' : 'ok' };
   }
-  function flagsOf(l) { return `${l.definitsiooniline ? ' †' : ''}${l.uuriv ? ' ‡' : ''}`; }
+  function flagsOf(l) { return `${l.definitsiooniline ? ' †' : ''}${l.madal_lahutus ? ' ‡' : ''}${l.nodata_valja ? ' §' : ''}`; }
   function unitShort(u) { return (u || '').split(' (')[0]; }
   function csvQ(v) { return v === null || v === undefined ? '' : typeof v === 'string' ? `"${v.replaceAll('"', '""')}"` : String(v); }
   function saveText(name, text, mime = 'text/csv;charset=utf-8') {
@@ -43,7 +43,7 @@
   /** Staatuse märgend (legend). */
   function statusLegend(parent) {
     const lg = h('ul', { class: 'legend' }, parent);
-    for (const [cls, t] of [['ok', 'väärtus (keskmine kogu klassi kehtiva pindala kohta, nullid kaasa arvatud)'], ['part', 'kaldkiri ja kollane: osaline kate (kehtivaid piksleid alla 90 %)'], ['mix', 'lilla: uuriv segumudel (jäme ruudustik)'], ['none', 'ei paku: nullist erinevaid piksleid alla 1 % (lähtekasu „väga-väga vähe“)'], ['miss', '–: teenust ei hinnatud (kehtivaid piksleid alla 5 %)']]) {
+    for (const [cls, t] of [['ok', 'väärtus (mediaan kogu klassi pindala kohta, nullid kaasa arvatud)'], ['part', 'kaldkiri ja kollane: osaline kate (kehtivaid piksleid alla 90 %)'], ['none', 'ei paku: nullist erinevaid piksleid alla 1 % (lähtekasu „väga-väga vähe“)'], ['miss', '–: teenust ei hinnatud (kehtivaid piksleid alla 5 %)']]) {
       const li = h('li', {}, lg); h('span', { class: `cellkey ${cls}` }, li, cls === 'none' ? 'ei paku' : cls === 'miss' ? '–' : '12,3'); h('span', {}, li, t);
     }
   }

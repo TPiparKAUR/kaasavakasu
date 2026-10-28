@@ -67,8 +67,11 @@ def build_data(results: Path, out: Path, sensitivity: Path | None = None) -> dic
     unit_ix = {(r["unit_level"], r["unit_code"]): r["ui"] for r in units.iter_rows(named=True)}
 
     methods: dict[str, str] = {}
+    notes: dict[str, str] = {}
     if extra.exists():
-        methods = dict(pl.read_csv(extra).select("id", "meetod").iter_rows())
+        ex = pl.read_csv(extra)
+        methods = dict(ex.select("id", "meetod").iter_rows())
+        notes = {k: v for k, v in ex.select("id", "markus").iter_rows() if v}
 
     teenused = []
     for lid in layer_ids:
@@ -95,6 +98,8 @@ def build_data(results: Path, out: Path, sensitivity: Path | None = None) -> dic
                 "kirjeldus": r["abstract"],
                 "eta2": eta,
                 "meetod": methods.get(lid, "paaritatud"),
+                "lahutus_markus": notes.get(lid, ""),
+                "nodata_valja": lid in catalog.NODATA_EXCLUDED,
                 "definitsiooniline": lid in catalog.DEFINITIONAL,
                 "aasta": next((int(s) for s in lid.split("_") if s.isdigit() and len(s) == 4), None),
             }
@@ -151,6 +156,24 @@ def build_data(results: Path, out: Path, sensitivity: Path | None = None) -> dic
         "oluline_m",
         "oluline_u",
         "kooskolas",
+        # metoodika v2: mediaanipõhised hinnangud (veebilehe põhihinnang)
+        "median_a",
+        "median_b",
+        "delta_u_med",
+        "rel_u_med",
+        "ci_u_med_lo",
+        "ci_u_med_hi",
+        "p_u_med",
+        "q_u_med",
+        "oluline_u_med",
+        "delta_m_med",
+        "rel_m_med",
+        "ci_m_med_lo",
+        "ci_m_med_hi",
+        "p_m_med",
+        "q_m_med",
+        "oluline_m_med",
+        "kooskolas_med",
     ]
     cols_p = [c for c in cols_p if c in paarid.columns]
     pr = paarid.with_columns(
@@ -182,11 +205,19 @@ def build_data(results: Path, out: Path, sensitivity: Path | None = None) -> dic
         "q50",
         "q75",
         "q95",
+        "median",
+        "n_nz",
+        "median_nz",
+        "blocks_med",
+        *[f"mq{q}" for q in stats.QNAMES],
+        "blocks_med_nz",
+        *[f"mq{q}_nz" for q in stats.QNAMES],
     ]
+    cols_l = [c for c in cols_l if c in lahtrid.columns]
     kr = klassid.with_columns(pl.col("layer_id").replace_strict(li, return_dtype=pl.Int64)).join(
         cl.select("idx", "kood"), left_on="cls", right_on="idx"
     )
-    cols_k = ["layer_id", "kood", "n", "mean", "sd"]
+    cols_k = [c for c in ["layer_id", "kood", "n", "mean", "sd", "median", "median_nz"] if c in kr.columns]
 
     params = pl.read_csv(results / "parameetrid.csv").row(0, named=True)
     meta = {
@@ -218,6 +249,7 @@ def build_data(results: Path, out: Path, sensitivity: Path | None = None) -> dic
     (out / "lahtrid.json").write_text(json.dumps(_rows(lr, cols_l), separators=(",", ":")), encoding="utf-8")
     (out / "klassid.json").write_text(json.dumps(_rows(kr, cols_k), separators=(",", ":")), encoding="utf-8")
     _write_distributions(results, out, li, unit_ix)
+    _write_median_extras(results, out, li, unit_ix)
     if sensitivity is not None and sensitivity.exists():
         (out / "tundlikkus.json").write_text(
             json.dumps(pl.read_csv(sensitivity).to_dicts(), ensure_ascii=False, separators=(",", ":")),
@@ -234,6 +266,47 @@ def build_data(results: Path, out: Path, sensitivity: Path | None = None) -> dic
     )
     csv.write_csv(out / "tulemused_paarid.csv")
     return meta
+
+
+def _write_median_extras(
+    results: Path, out: Path, li: dict[str, int], unit_ix: dict[tuple[str, int], int]
+) -> None:
+    """Kirjuta ``algklassid.json`` (mediaan algse seisundiklassi kaupa) ja ``segumudel.json`` (võrdlus, uuriv)."""
+    state_ix = {s: i for i, s in enumerate(stats.STATES)}
+    alg = results / "algklassid.parquet"
+    if alg.exists():
+        a = pl.read_parquet(alg).filter(pl.col("layer_id").is_in(list(li)))
+        rows = [
+            [
+                li[r["layer_id"]],
+                unit_ix[(r["unit_level"], int(r["unit_code"]))],
+                r["seisund_algne"],
+                state_ix[r["state"]],
+                r["n"],
+                _r(r["mean"]),
+                _r(r["median"]),
+                _r(r["median_nz"]),
+            ]
+            for r in a.iter_rows(named=True)
+        ]
+        (out / "algklassid.json").write_text(json.dumps(rows, separators=(",", ":")), encoding="utf-8")
+    seg = results / "paarid_segumudel.parquet"
+    if seg.exists():
+        m = pl.read_parquet(seg).filter(pl.col("layer_id").is_in(list(li)))
+        pairs = {n: i for i, n in enumerate(stats.PAIR_NAMES)}
+        rows = [
+            [
+                li[r["layer_id"]],
+                unit_ix[(r["unit_level"], int(r["unit_code"]))],
+                pairs[r["pair"]],
+                _r(r["delta_m"]),
+                _r(r["ci_m_lo"]),
+                _r(r["ci_m_hi"]),
+                _r(r.get("q_m")),
+            ]
+            for r in m.iter_rows(named=True)
+        ]
+        (out / "segumudel.json").write_text(json.dumps(rows, separators=(",", ":")), encoding="utf-8")
 
 
 def _write_distributions(
