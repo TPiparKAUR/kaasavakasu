@@ -807,7 +807,7 @@
     h('h2', {}, card, 'Teenuse tase seisundi kaupa');
     const tools = h('div', { class: 'tools' }, card), sg = h('div', { class: 'seg', role: 'group', 'aria-label': 'Milliseid piksleid näidata' }, tools);
     for (const [v, t] of [[false, 'Kõik pikslid'], [true, 'Ainult pikslid, kus teenus esineb (väärtus > 0)']]) { const bt = h('button', { type: 'button', 'aria-pressed': String(S.lvnz === v) }, sg, t); bt.onclick = () => { S.lvnz = v; renderAll(true); }; }
-    h('p', { class: 'sub' }, card, `Punkt = täpne pikslimediaan${nz ? ' kohtades, kus teenus esineb' : ''}; kast = 1 km plokkide mediaanide vahemik Q1–Q3, vurr = 5.–95. protsentiil, vahetõmmis = plokkide mediaanide mediaan.`);
+    h('p', { class: 'sub' }, card, `Punkt = täpne pikslimediaan${nz ? ' kohtades, kus teenus esineb' : ''}; kast = 1 km plokkide mediaanide vahemik Q1–Q3, vurr = 5.–95. protsentiil, vahetõmmis = plokkide mediaanide mediaan. „Esineb“ = mitu % pindalast on väärtusega üle 0.`);
     const cells = [0, 1, 2].map((s2) => D.byCell.get(`${li}|${ui}|${s2}`));
     if (!cells.some(Boolean)) { h('p', { class: 'empty' }, card, 'Andmeid pole.'); return; }
     const W = Math.max(320, Math.min(560, card.clientWidth - 30 || 520)), H = 290, m = { l: 62, r: 12, t: 26, b: 40 };
@@ -833,7 +833,7 @@
       }
       h('circle', { cx, cy: y(med), r: 5, fill: cssVar('--ink'), stroke: cssVar('--surface'), 'stroke-width': 2 }, g);
       h('text', { x: cx + w / 2 + 8, y: y(med) + 4, class: 'strong' }, svg, fmt(med));
-      h('text', { x: cx, y: H - 8, 'text-anchor': 'middle' }, svg, occ === null ? '' : `esineb ${nf(0).format(occ * 100)} % pindalast`);
+      h('text', { x: cx, y: H - 8, 'text-anchor': 'middle' }, svg, occ === null ? '' : `esineb ${nf(0).format(occ * 100)} %`);
       tipOn(g, (t) => {
         tl(t, 'm', `${T.nimi} · ${D.meta.seisundid[st]}`); tl(t, 'v', `mediaan ${fmt(c.median)} ${T.uhik || ''}`);
         tl(t, 'm', `kohtades, kus teenus esineb: mediaan ${fmt(c.median_nz)} · keskmine (kõik pikslid) ${fmt(c.mean)}`);

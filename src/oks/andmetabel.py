@@ -137,8 +137,10 @@ def _wide(
         for m in range(k, j + 1):
             lay = layers[m]
             roll = {"bio": "biofüüsikaline", "raha": "rahaline", "lisa": "lisakiht"}[lay["roll"]]
-            flags = (" ‡ uuriv" if lay["uuriv"] else "") + (
-                " † definitsiooniline" if lay["definitsiooniline"] else ""
+            flags = (
+                (" ‡ madalam lahutusvõime" if lay["madal_lahutus"] else "")
+                + (" § erandkiht" if lay["nodata_valja"] else "")
+                + (" † definitsiooniline" if lay["definitsiooniline"] else "")
             )
             ws.write(1, c + m, f"{lay['nimi']} [{roll}]{flags}", f["h2"])
             ws.write(2, c + m, lay["uhik"] or "ühik dokumenteerimata", f["u"])
@@ -336,7 +338,8 @@ def write(
         "Märkus",
         "Tabeli märkus",
         "Definitsiooniline",
-        "Uuriv",
+        "Madalam lahutusvõime",
+        "Erandkiht (NoData välja)",
         "Lisakiht",
     ]
     for c, t in enumerate(heads):
@@ -356,7 +359,8 @@ def write(
                 x["markus"],
                 x["tabeli_markus"],
                 "jah" if x["definitsiooniline"] else "",
-                "jah" if x["uuriv"] else "",
+                "jah" if x["madal_lahutus"] else "",
+                "jah" if x["nodata_valja"] else "",
                 "jah" if x["lisakiht"] else "",
             ]
         ):
