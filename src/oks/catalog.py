@@ -80,8 +80,8 @@ UNITS: dict[str, tuple[str, str]] = {
         "RINGLUSE HOIATUS: põllukultuuride seisundiklass A-D langeb baaskaardil kokku selle kihi väärtusklassiga A-D (kontrollitud: keskmine väärtusklass klassides A/B/C/D = 1,0006 / 2,0000 / 3,0000 / 4,0000, SD ~ 0,01), mis on tuletatud samast reaalboniteedist; seos seisundi ja boniteedi vahel on seetõttu osaliselt definitsiooniline. Tabeli märkus: 'Eraldi käsitlus'",
     ),
     "lamm_grd1000_am_drained_2022": (
-        "EUR (väli lammide_taastamise_kulu)",
-        "1 km ruudustik, ainult lammiruudud (am_osa > 0); väärtus väheneb kuivendatud pindalaga, seos seisundiga kaudne. Uuriv segumudel",
+        "EUR/ha/a (väli lammide_taastamise_kulu)",
+        "1 km ruudustik, väärtus ainult lammiruutudes (am_osa > 0); väärtus väheneb kuivendatud pindalaga, seos seisundiga kaudne",
     ),
 }
 
@@ -100,11 +100,14 @@ ZERO_EXTRA: dict[str, tuple[float, ...]] = {
 
 #: Kihid, mille deklareeritud NoData jäetakse valimist välja. Kõigis teistes rastrites loetakse NoData
 #: (ka 255, 65535, -1, -9999, float32 miinimum) kehtivaks nulliks, kui all on baaskaardi kood (metoodika v2).
+#: Kasemahla kihtides tähendab NoData puuduvat hinnangut (soo- ja kõdusoometsades andmed puuduvad), mitte nulli.
 NODATA_EXCLUDED: frozenset[str] = frozenset(
     {
         "mustikad_pohlad_saagikus_2020_10m",
         "mustikad_pohlad_hind_2022_10m",
         "pohlad_saagikus_2020_10m",
+        "kasemahl_saagikus_2020_10m",
+        "kasemahl_hind_2022_10m",
     }
 )
 

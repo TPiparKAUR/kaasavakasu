@@ -133,6 +133,7 @@ def test_zero_values_policy() -> None:
     assert catalog.zero_values("seened_saagikus_2020_10m", -3.399999952144364e38) == (-3.399999952144364e38,)
     assert catalog.zero_values("pohlad_saagikus_2020_10m", -128.0) == ()
     assert catalog.zero_values("mustikad_pohlad_hind_2022_10m", 9999.0) == ()
+    assert catalog.zero_values("kasemahl_saagikus_2020_10m", -3.402823060737097e38) == ()
     assert catalog.zero_values("elupaigahuve_pakkumine_2022_10m", None) == ()
 
 
