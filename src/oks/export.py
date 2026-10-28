@@ -69,7 +69,7 @@ def build_data(results: Path, out: Path, sensitivity: Path | None = None) -> dic
     methods: dict[str, str] = {}
     notes: dict[str, str] = {}
     if extra.exists():
-        ex = pl.read_csv(extra)
+        ex = pl.read_csv(extra).unique("id", keep="first", maintain_order=True)  # segumudeli rida on lisarida
         methods = dict(ex.select("id", "meetod").iter_rows())
         notes = {k: v for k, v in ex.select("id", "markus").iter_rows() if v}
 

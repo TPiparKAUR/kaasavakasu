@@ -5,7 +5,7 @@ Kontrollnimekiri täisjooksu ja teise etapi jaoks. Iga samm märgitakse tehtuks 
 | # | Samm | Valmis, kui | Kontroll | Seis |
 |---|---|---|---|---|
 | 1 | Täisjooksu agregeerimine: kõik rastrid (`oks aggregate`) ja vektorid (`oks fields`) | Kõigil kihtidel on `plokid/<id>.parquet`, `__cls`, `__hist`, `__val/`, `__blkmed` | `pipeline.done()` on tõene kõigil hinnatavatel kihtidel | |
-| 2 | `report.py`: tulemuste dokument mediaanidega | `docs/tulemused.md` näitab mediaane ja mediaanipõhist Δ | testid, ruff, mypy | |
+| 2 | `report.py`: tulemuste dokument mediaanidega | `docs/tulemused.md` näitab mediaane ja mediaanipõhist Δ | testid, ruff, mypy | tehtud (kontrollitud piloodi tulemustel) |
 | 3 | Metoodikate võrdlus (v1 → v2) saidi jaotisena ja CSV-na | `vordlus.json`, jaotis „Metoodika võrdlus“ | saidi ehitus, brauserikontroll | |
 | 4 | Avaldamine: v1 (commit `5aa4596`) peaaadressil, v2 aadressil `/v2/` | `pages.yml` ehitab mõlemad, v1-l on lingiga märge | töövoo kuiv jooks kohapeal | |
 | 5 | Analüüs: `oks analyse` (põhijooks) | `data/tulemused/paarid.parquet` jt mediaaniveergudega | kõigi kihtide read olemas | |
