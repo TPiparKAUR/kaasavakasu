@@ -49,7 +49,14 @@ def expected_rows(kt: pl.DataFrame, layers: list[str]) -> list[dict]:
     for _key, g in sorted(d.group_by("okosusteem_kood", "alam_kood", "uld"), key=lambda kv: kv[0]):
         by = {r["layer_id"]: r for r in g.iter_rows(named=True)}
         r0 = g.row(0, named=True)
-        rows.append({"tuup": r0["tuup"], "seisund": r0["seisund_nimi"], "area": r0["pindala_ha"], "cells": [by.get(lid) for lid in layers]})
+        rows.append(
+            {
+                "tuup": r0["tuup"],
+                "seisund": r0["seisund_nimi"],
+                "area": r0["pindala_ha"],
+                "cells": [by.get(lid) for lid in layers],
+            }
+        )
     return rows
 
 
@@ -69,7 +76,9 @@ def main() -> None:
         pg.wait_for_selector("section.hero")
         pg.click("nav.sections a:has-text('Tulemustabel')")
         pg.wait_for_selector("table.rt tr.dr")
-        shown = pg.evaluate("""() => [...document.querySelectorAll('table.rt tr.dr')].map(tr => ({tuup: tr.querySelector('th.fx0').textContent, seisund: tr.querySelector('td.fx1').textContent, area: tr.querySelector('td.fx2').textContent, cells: [...tr.querySelectorAll('td[data-r]')].map(td => td.textContent)}))""")
+        shown = pg.evaluate(
+            """() => [...document.querySelectorAll('table.rt tr.dr')].map(tr => ({tuup: tr.querySelector('th.fx0').textContent, seisund: tr.querySelector('td.fx1').textContent, area: tr.querySelector('td.fx2').textContent, cells: [...tr.querySelectorAll('td[data-r]')].map(td => td.textContent)}))"""
+        )
         bad, n, textual = [], 0, 0
         if len(shown) != len(exp):
             out["V8 ridade arv"] = {"veeb": len(shown), "oodatud": len(exp)}
@@ -96,14 +105,22 @@ def main() -> None:
                     n += 1
                     if v is None or not close(v, e["median"]):
                         bad.append((e_row["tuup"], e_row["seisund"], lid, txt, e["median"]))
-        out["V8 tulemustabel"] = {"ridu veebis": len(shown), "arvulisi lahtreid": n, "tekstilisi (ei paku / –)": textual, "lahknevusi": len(bad), "näited": bad[:5]}
+        out["V8 tulemustabel"] = {
+            "ridu veebis": len(shown),
+            "arvulisi lahtreid": n,
+            "tekstilisi (ei paku / –)": textual,
+            "lahknevusi": len(bad),
+            "näited": bad[:5],
+        }
         # V9 stsenaarium: Salumets vilets -> hea, 1000 ha
         pg.click("nav.sections a:has-text('Stsenaarium')")
         pg.wait_for_selector("table.scn")
         unit = pg.evaluate("document.querySelector('#cu').selectedOptions[0].textContent")
         ha = float(pg.input_value("#ch"))
         frm, to = pg.input_value("#cf"), pg.input_value("#ct")
-        rows = pg.evaluate("""() => [...document.querySelectorAll('table.scn tbody tr')].map(tr => [...tr.querySelectorAll('td')].map(td => td.textContent))""")
+        rows = pg.evaluate(
+            """() => [...document.querySelectorAll('table.scn tbody tr')].map(tr => [...tr.querySelectorAll('td')].map(td => td.textContent))"""
+        )
         names = {x["id"]: (x["nimi"], x["roll"]) for x in K["kihid"]}
         unit = unit.strip()
         sel = kt.filter(pl.col("tuup") == unit)
@@ -114,10 +131,23 @@ def main() -> None:
             by_nm.setdefault(r[0], []).append(r)
         for lid in layers:
             nm, roll = names[lid]
-            rr = [x for x in rows if x[0].startswith(nm) and x[0].endswith({"bio": "biofüüsikaline", "raha": "rahaline", "lisa": "lisakiht"}[roll])]
+            rr = [
+                x
+                for x in rows
+                if x[0].startswith(nm)
+                and x[0].endswith({"bio": "biofüüsikaline", "raha": "rahaline", "lisa": "lisakiht"}[roll])
+            ]
             a = sel.filter((pl.col("layer_id") == lid) & (pl.col("uld") == uld[frm]))
             c = sel.filter((pl.col("layer_id") == lid) & (pl.col("uld") == uld[to]))
-            if not rr or a.is_empty() or c.is_empty() or a["mean"][0] is None or c["mean"][0] is None or a["staatus"][0] in ("ei paku", "ei hinnatud") or c["staatus"][0] in ("ei paku", "ei hinnatud"):
+            if (
+                not rr
+                or a.is_empty()
+                or c.is_empty()
+                or a["mean"][0] is None
+                or c["mean"][0] is None
+                or a["staatus"][0] in ("ei paku", "ei hinnatud")
+                or c["staatus"][0] in ("ei paku", "ei hinnatud")
+            ):
                 continue
             row = rr[0]
             # veerud: nimi, ühik, mediaan a, mediaan b, mediaanide vahe, keskmiste vahe, keskmiste vahe x pindala
@@ -133,7 +163,14 @@ def main() -> None:
                 ok = ok and abs(vt - (tb - ta) * ha) <= max(0.012 * abs((tb - ta) * ha), 0.6)
             if not ok:
                 bad9.append((nm, roll, row[2:7], ma, mb, ta, tb))
-        out["V9 stsenaarium"] = {"üksus": unit, "seisundid": f"{frm}→{to}", "pindala ha": ha, "kontrollitud ridu": n9, "lahknevusi": len(bad9), "näited": bad9[:4]}
+        out["V9 stsenaarium"] = {
+            "üksus": unit,
+            "seisundid": f"{frm}→{to}",
+            "pindala ha": ha,
+            "kontrollitud ridu": n9,
+            "lahknevusi": len(bad9),
+            "näited": bad9[:4],
+        }
         out["JS vead brauseris"] = errs
         b.close()
     # V10 Excel
@@ -142,7 +179,10 @@ def main() -> None:
     wb = load_workbook(SITE / "andmetabel_kaasneva_kasu.xlsx", read_only=True, data_only=True)
     ws = wb["Tüübid × seisund"]
     data = list(ws.iter_rows(min_row=4, values_only=True))
-    ix = {(r["tuup"], r["seisund_nimi"], r["layer_id"]): r for r in kt.filter(pl.col("uld").is_in([1, 2, 3, 4, 5])).iter_rows(named=True)}
+    ix = {
+        (r["tuup"], r["seisund_nimi"], r["layer_id"]): r
+        for r in kt.filter(pl.col("uld").is_in([1, 2, 3, 4, 5])).iter_rows(named=True)
+    }
     bad10 = n10 = 0
     for row in data:
         if row[1] is None:
@@ -154,9 +194,16 @@ def main() -> None:
             n10 += 1
             if abs(v - e["median"]) > 5e-5 * max(abs(e["median"]), 1e-9):
                 bad10 += 1
-    out["V10 Excel (Tüübid × seisund)"] = {"ridu": sum(1 for r in data if r[1]), "arvulisi lahtreid": n10, "lahknevusi": bad10, "lehed": wb.sheetnames}
+    out["V10 Excel (Tüübid × seisund)"] = {
+        "ridu": sum(1 for r in data if r[1]),
+        "arvulisi lahtreid": n10,
+        "lahknevusi": bad10,
+        "lehed": wb.sheetnames,
+    }
     print(json.dumps(out, ensure_ascii=False, indent=2, default=str))
-    (RES / "validatsioon_veeb.json").write_text(json.dumps(out, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
+    (RES / "validatsioon_veeb.json").write_text(
+        json.dumps(out, ensure_ascii=False, indent=2, default=str), encoding="utf-8"
+    )
 
 
 if __name__ == "__main__":
