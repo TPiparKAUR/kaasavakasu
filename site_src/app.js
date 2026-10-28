@@ -66,7 +66,7 @@
   /* ---------- andmed ---------- */
   let D; // {meta, P, L, K, byPair, byCell}
   async function load() {
-    const raw = window.__OKS__ || Object.fromEntries(await Promise.all(['meta', 'paarid', 'lahtrid', 'klassid', 'jaotused', 'kaasnev', 'tendus', 'nouded', 'algklassid', 'segumudel'].map(async (n) => {
+    const raw = window.__OKS__ || Object.fromEntries(await Promise.all(['meta', 'paarid', 'lahtrid', 'klassid', 'jaotused', 'kaasnev', 'tendus', 'nouded', 'algklassid', 'segumudel', 'vordlus'].map(async (n) => {
       try { const r = await fetch(`data/${n}.json`); return [n, r.ok ? await r.json() : null]; } catch { return [n, null]; }
     })));
     const meta = raw.meta;
@@ -84,7 +84,7 @@
     for (const [l, u, k, st, n, mean, median, mnz] of raw.algklassid || []) { const key = `${l}|${u}`; if (!alg.has(key)) alg.set(key, []); alg.get(key).push({ k, st, n, mean, median, mnz }); }
     const seg = new Map((raw.segumudel || []).map(([l, u, p, d, lo, hi, q]) => [`${l}|${u}|${p}`, { d, lo, hi, q }]));
     D = { meta, P, L, K, byPair, byCell, classMeta, kByLayer, dist, distSpec, alg, seg };
-    D.K = raw.kaasnev || null; D.T = raw.tendus || null; D.N = raw.nouded || null;
+    D.K = raw.kaasnev || null; D.T = raw.tendus || null; D.N = raw.nouded || null; D.V = raw.vordlus || null;
   }
 
   /* ---------- olek ---------- */
@@ -239,7 +239,7 @@
 
   /* ---------- vahekaardid ---------- */
   const TABS = [['ulevaade', 'Kuumkaart'], ['teenus', 'Teenuse detail'], ['profiil', 'Profiil'], ['jaotused', 'Jaotused'], ['kihid', 'Kihtide ülevaade'], ['tabel', 'Tabel']];
-  const SECTIONS = [['avaleht', 'Avaleht'], ['tulemused', 'Tulemustabel'], ['stsenaarium', 'Stsenaarium'], ['kvalit', 'Kvalitatiivne'], ['analuus', 'Statistiline analüüs'], ['lahteulesanne', 'Lähteülesande täitmine'], ['meetod', 'Meetod']];
+  const SECTIONS = [['avaleht', 'Avaleht'], ['tulemused', 'Tulemustabel'], ['stsenaarium', 'Stsenaarium'], ['kvalit', 'Kvalitatiivne'], ['analuus', 'Statistiline analüüs'], ['lahteulesanne', 'Lähteülesande täitmine'], ['vordlus', 'Metoodika võrdlus'], ['meetod', 'Meetod']];
   function renderSections() {
     const n = $('#sections'); n.replaceChildren();
     for (const [k, t] of SECTIONS) { const a = h('a', { href: `#${k}`, class: 'sec', 'aria-current': S.sec === k ? 'page' : null }, n, t); a.onclick = (e) => { e.preventDefault(); navTo(k); }; }
@@ -1066,7 +1066,7 @@
       ({ ulevaade: heatmap, teenus: detail, profiil: profile, jaotused: distTab, kihid: layersTab, tabel: table })[S.tab](root);
       const n = tableRows().length; const c = $('#count'); if (c) c.textContent = `${n} sobivat hinnangut`;
     } else {
-      ({ avaleht: homeView, tulemused: resultsView, stsenaarium: scenarioView, kvalit: qualView, lahteulesanne: briefView, meetod: method })[S.sec](root);
+      ({ avaleht: homeView, tulemused: resultsView, stsenaarium: scenarioView, kvalit: qualView, lahteulesanne: briefView, vordlus: compareView, meetod: method })[S.sec](root);
     }
   }
   async function main() {

@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import json
 import math
+import shutil
 from datetime import date
 from pathlib import Path
 from typing import Any
 
 import polars as pl
 
-from . import catalog, config, stats
+from . import catalog, config, stats, vordlus
 
 #: Ümardus (olulisi numbreid) JSON-is; täpsed väärtused on CSV-s.
 SIG = 5
@@ -250,6 +251,7 @@ def build_data(results: Path, out: Path, sensitivity: Path | None = None) -> dic
     (out / "klassid.json").write_text(json.dumps(_rows(kr, cols_k), separators=(",", ":")), encoding="utf-8")
     _write_distributions(results, out, li, unit_ix)
     _write_median_extras(results, out, li, unit_ix)
+    _write_comparison(results, out)
     if sensitivity is not None and sensitivity.exists():
         (out / "tundlikkus.json").write_text(
             json.dumps(pl.read_csv(sensitivity).to_dicts(), ensure_ascii=False, separators=(",", ":")),
@@ -307,6 +309,68 @@ def _write_median_extras(
             for r in m.iter_rows(named=True)
         ]
         (out / "segumudel.json").write_text(json.dumps(rows, separators=(",", ":")), encoding="utf-8")
+
+
+def _write_comparison(results: Path, out: Path) -> None:
+    """Kirjuta ``vordlus.json`` ja kopeeri võrdluse CSV-d (``scripts/vordle_metoodikad.py`` väljund)."""
+    kf, pf = results / "vordlus_kihid.csv", results / "vordlus_paarid.csv"
+    if not (kf.exists() and pf.exists()):
+        return
+    k = pl.read_csv(kf, infer_schema_length=None).filter(pl.col("nimi").is_not_null())
+    p = pl.read_csv(pf, infer_schema_length=None)
+    cols = [
+        "nimi",
+        "pohjus",
+        "kate_v1",
+        "kate_v2",
+        "abs_rel_valim_mediaan",
+        "abs_rel_statistik_mediaan",
+        "osa_mediaan_null",
+        "olulisi_v1",
+        "olulisi_v2_keskmine",
+        "olulisi_v2_mediaan",
+        "suund_muutus",
+        "hinnang_lisandus",
+    ]
+    muutus = {
+        lvl: {
+            part: dict(p.filter(pl.col("unit_level") == lvl).group_by(f"muutus_{part}").len().iter_rows())
+            for part in ("valim", "statistik", "kokku")
+        }
+        for lvl in ("okosusteem", "alam")
+    }
+    c = (
+        pl.read_csv(results / "vordlus_lahtrid.csv", infer_schema_length=None)
+        .with_columns(pl.col("mean_v2", "median_v2").cast(pl.Float64))
+        .filter(pl.col("mean_v2").is_not_null())
+    )
+    lahtrid = {
+        "n": c.height,
+        **{
+            k: _r(v)
+            for k, v in c.select(
+                ((pl.col("median_v2") == 0) & (pl.col("mean_v2") > 0)).mean().alias("osa_mediaan_null"),
+                (pl.col("median_v2") < pl.col("mean_v2")).mean().alias("osa_mediaan_vaiksem"),
+            )
+            .row(0, named=True)
+            .items()
+        },
+    }
+    data = {
+        "pohjused": vordlus.CAUSES,
+        "lahtrid": lahtrid,
+        "klassid": list(vordlus.SIG_CLASSES),
+        "kihid_veerud": cols,
+        "kihid": _rows(k.sort("pohjus", "nimi"), cols),
+        "muutus": muutus,
+    }
+    (out / "vordlus.json").write_text(
+        json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
+    )
+    for f in ("kihid", "lahtrid", "paarid"):
+        src = results / f"vordlus_{f}.csv"
+        if src.exists():
+            shutil.copyfile(src, out / src.name)
 
 
 def _write_distributions(
