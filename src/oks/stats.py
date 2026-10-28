@@ -618,20 +618,25 @@ def analyse_layer_median(
     # ---------- paaritamata: täpne klastribootstrap ----------
     boots: dict[tuple[int, int], NDArray[np.float64]] = {}
     if unpaired_boot:
-        lf = median.scan(val_dir)
+        # sagedustabeli failid (üks ploki-rea n_km kohta) klastriridade kaupa: klaster ei ulatu üle klastrirea,
+        # seega on iga rühma (klaster, väärtus) koondamine lõplik ja mälus on korraga ainult üks klastririda
+        ncn = -(-(N_MAX - N_MIN) // p.cluster_blocks)
+        crow: dict[int, list[Path]] = {}
+        for vf in sorted(val_dir.glob("n*.parquet")):
+            c = min(max((int(vf.stem[1:]) - N_MIN) // p.cluster_blocks, 0), ncn - 1)
+            crow.setdefault(c, []).append(vf)
         for key, ks in koods.items():
-            # (klaster, väärtus) kaupa koondatud loendus annab sama täpse mediaani kui pikslite read;
-            # voogkoondamine hoiab mälu väikesena ka sadade miljonite sagedustabeli ridade korral
-            rows = (
-                lf.filter(pl.col("kood").is_in(ks))
+            # (klaster, väärtus) kaupa koondatud loendus annab sama täpse mediaani kui pikslite read
+            seg = median.segments(
+                pl.scan_parquet(fs)
+                .filter(pl.col("kood").is_in(ks))
                 .group_by(cluster_expr(p.cluster_blocks).alias("cl"), "value")
                 .agg(pl.col("n").cast(pl.Int64).sum())
-                .collect(engine="streaming")
+                .collect()
+                for fs in crow.values()
             )
-            boots[key] = median.cluster_boot_medians(
-                rows["cl"].to_numpy().astype(np.int32), rows["value"].to_numpy(), rows["n"].to_numpy(), W
-            )
-            del rows
+            boots[key] = median.cluster_boot_medians_seg(seg, W)
+            del seg
 
     pair_rows: list[dict[str, object]] = []
     for ui in range(nu):

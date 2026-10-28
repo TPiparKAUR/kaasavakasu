@@ -47,19 +47,29 @@ def test_union_median_matches_numpy(tmp_path: Path, dtype: type) -> None:
             assert np.isnan(m_all)
 
 
-@pytest.mark.parametrize("dense", [True, False])
-def test_cluster_bootstrap_medians_are_exact(dense: bool, monkeypatch: pytest.MonkeyPatch) -> None:
-    if not dense:
+@pytest.mark.parametrize(
+    ("mode", "dtype"),
+    [("dense", np.float64), ("index", np.float64), ("value", np.float64), ("value", np.float32)],
+)
+def test_cluster_bootstrap_medians_are_exact(mode: str, dtype: type, monkeypatch: pytest.MonkeyPatch) -> None:
+    if mode == "index":
         monkeypatch.setattr(median, "_DENSE_MAX", 0)
+    if mode == "value":  # suurte valimite algoritm (ujukomaarvude järjestuse poolitus)
+        monkeypatch.setattr(median, "_UNIQUE_MAX", 0)
     rng = np.random.default_rng(5)
     n_cl, npx = 40, 6000
     cl = rng.integers(0, n_cl, npx)
-    x = np.where(rng.random(npx) < 0.5, 0.0, np.round(rng.gamma(2, 3, npx), 1))
+    x = np.where(rng.random(npx) < 0.5, 0.0, np.round(rng.gamma(2, 3, npx) - 1.5, 1)).astype(dtype)
     W = rng.multinomial(n_cl, np.full(n_cl, 1 / n_cl), size=200).astype(np.float64)
-    # sagedustabel (klaster, väärtus)
-    key, cnt = np.unique(np.stack([cl, x]), axis=1, return_counts=True)
-    got = median.cluster_boot_medians(key[0].astype(np.int64), key[1], cnt.astype(np.int64), W)
+    # sagedustabel (klaster, väärtus), kolmes partiis (klastrid ei ulatu üle partii piiri)
+    d = pl.DataFrame({"cl": cl, "value": x, "n": np.ones(npx, dtype=np.int64)})
+    d = d.group_by("cl", "value").agg(pl.col("n").sum())
+    batches = [d.filter(pl.col("cl") % 3 == r) for r in range(3)]
+    got = median.cluster_boot_medians_seg(median.segments(batches), W)
     want = np.array(
-        [np.median(np.repeat(x, W[b][cl].astype(int))) if W[b][cl].sum() else np.nan for b in range(200)]
+        [
+            np.median(np.repeat(x.astype(np.float64), W[b][cl].astype(int))) if W[b][cl].sum() else np.nan
+            for b in range(200)
+        ]
     )
     np.testing.assert_array_equal(got, want)

@@ -23,6 +23,9 @@ from numpy.typing import NDArray
 
 #: Kordused x erinevad väärtused, millest alates kasutatakse poolitusotsingut tiheda maatriksi asemel.
 _DENSE_MAX = 50_000_000
+#: (Klaster, väärtus) ridade arv, millest alates ``cluster_boot_medians_seg`` ei pane ridu kokku (``np.unique``),
+#: vaid otsib poolitusega üle ujukomaarvude järjestuse iga klastri sorteeritud väärtustel (väiksem mälu).
+_UNIQUE_MAX = 5_000_000
 
 
 def scan(val_dir: Path) -> pl.LazyFrame:
@@ -203,4 +206,92 @@ def cluster_boot_medians(
         i_lo, i_hi = kth(rank_lo), kth(rank_hi)
     i_lo, i_hi = np.minimum(i_lo, K - 1), np.minimum(i_hi, K - 1)
     out[ok] = (vals[i_lo[ok]].astype(np.float64) + vals[i_hi[ok]].astype(np.float64)) / 2
+    return out
+
+
+def _keys(x: NDArray[np.floating]) -> NDArray[np.unsignedinteger]:
+    """``_to_key`` massiivina: märgita täisarvud, mille järjestus on sama mis ujukomaarvude järjestus."""
+    ut, bits = _key_fns(x.dtype)
+    u = x.view(ut)
+    sign = ut(1 << (bits - 1))
+    return np.where(u & sign, ~u, u | sign).astype(ut)
+
+
+def _values(k: NDArray[np.unsignedinteger], dtype: np.dtype[np.generic]) -> NDArray[np.floating]:
+    """``_from_key`` massiivina."""
+    ut, bits = _key_fns(dtype)
+    k = k.astype(ut)
+    sign = ut(1 << (bits - 1))
+    return np.where(k & sign, k & ~sign, ~k).astype(ut).view(dtype)
+
+
+Segments = list[tuple[int, NDArray[np.floating], NDArray[np.int64]]]
+
+
+def segments(batches: Iterable[pl.DataFrame]) -> Segments:
+    """(klaster, väärtus, ``n``) partiidest iga klastri sorteeritud väärtused ja kumulatiivsed pikslite arvud.
+
+    Klaster ei tohi ulatuda üle partii piiri. Mälus on korraga üks partii ja kompaktne tulemus (väärtus +
+    kumulatiivne arv rea kohta).
+    """
+    out: Segments = []
+    for d in batches:
+        if d.is_empty():
+            continue
+        d = d.sort("cl", "value")
+        cl = d["cl"].to_numpy()
+        v = d["value"].to_numpy()
+        n = d["n"].to_numpy().astype(np.int64)
+        del d
+        cut = np.flatnonzero(cl[1:] != cl[:-1]) + 1
+        for a, b in zip(np.r_[0, cut], np.r_[cut, cl.size], strict=True):
+            out.append((int(cl[a]), v[a:b].copy(), np.cumsum(n[a:b])))
+    return out
+
+
+def cluster_boot_medians_seg(seg: Segments, W: NDArray[np.float64]) -> NDArray[np.float64]:
+    """``cluster_boot_medians`` klastrite segmentidest (``segments``); sama täpne tulemus.
+
+    Väikese valimi korral pannakse read kokku ja kasutatakse ``cluster_boot_medians``-i; suure valimi korral
+    leitakse iga korduse k-s väärtus vähima ``t``-na, mille korral ``Σ_c W[b, c] · #{x_c <= t} >= k + 1``, poolitusega
+    üle ujukomaarvude järjestuse (nagu ``ValueTable._kth``), ilma erinevate väärtuste ühise massiivita.
+    """
+    B = W.shape[0]
+    rows = sum(v.size for _, v, _ in seg)
+    if rows == 0:
+        return np.full(B, np.nan)
+    if rows <= _UNIQUE_MAX:
+        cl = np.concatenate([np.full(v.size, c, dtype=np.int64) for c, v, _ in seg])
+        val = np.concatenate([v for _, v, _ in seg])
+        cnt = np.concatenate([np.diff(cs, prepend=0) for _, _, cs in seg])
+        return cluster_boot_medians(cl, val, cnt, W)
+    dts = {v.dtype for _, v, _ in seg}
+    dtype = np.dtype(np.float32) if dts == {np.dtype(np.float32)} else np.dtype(np.float64)
+    seg = [(c, v.astype(dtype, copy=False), cs) for c, v, cs in seg]
+    ids = np.array([c for c, _, _ in seg])
+    Wc = W[:, ids]
+    tot = Wc @ np.array([float(cs[-1]) for _, _, cs in seg])
+    lo0 = _keys(np.array([min(v[0] for _, v, _ in seg)], dtype=dtype))[0]
+    hi0 = _keys(np.array([max(v[-1] for _, v, _ in seg)], dtype=dtype))[0]
+
+    def kth(rank: NDArray[np.float64]) -> NDArray[np.floating]:
+        lo = np.full(B, lo0, dtype=np.uint64)
+        hi = np.full(B, hi0, dtype=np.uint64)
+        while np.any(lo < hi):
+            mid = lo + (hi - lo) // 2
+            t = _values(mid, dtype)
+            f = np.zeros(B)
+            for i, (_c, v, cum) in enumerate(seg):
+                j = np.searchsorted(v, t, side="right")
+                f += Wc[:, i] * np.where(j > 0, cum[np.maximum(j - 1, 0)], 0)
+            hit = f >= rank + 1
+            hi = np.where(hit, mid, hi)
+            lo = np.where(hit, lo, mid + 1)
+        return _values(lo, dtype)
+
+    out = np.full(B, np.nan)
+    ok = tot > 0
+    a = kth(np.floor((tot - 1) / 2)).astype(np.float64)
+    b = kth(np.floor(tot / 2)).astype(np.float64)
+    out[ok] = (a[ok] + b[ok]) / 2
     return out
