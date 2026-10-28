@@ -4,7 +4,7 @@ Kontrollnimekiri täisjooksu ja teise etapi jaoks. Iga samm märgitakse tehtuks 
 
 | # | Samm | Valmis, kui | Kontroll | Seis |
 |---|---|---|---|---|
-| 1 | Täisjooksu agregeerimine: kõik rastrid (`oks aggregate`) ja vektorid (`oks fields`) | Kõigil kihtidel on `plokid/<id>.parquet`, `__cls`, `__hist`, `__val/`, `__blkmed` | `pipeline.done()` on tõene kõigil hinnatavatel kihtidel | |
+| 1 | Täisjooksu agregeerimine: kõik rastrid (`oks aggregate`) ja vektorid (`oks fields`) | Kõigil kihtidel on `plokid/<id>.parquet`, `__cls`, `__hist`, `__val/`, `__blkmed` | `pipeline.done()` on tõene kõigil hinnatavatel kihtidel | tehtud: 35/35 kihti (rastrid 1 h 51 min, vektorid 15 min) |
 | 2 | `report.py`: tulemuste dokument mediaanidega | `docs/tulemused.md` näitab mediaane ja mediaanipõhist Δ | testid, ruff, mypy | tehtud (kontrollitud piloodi tulemustel) |
 | 3 | Metoodikate võrdlus (v1 → v2) saidi jaotisena ja CSV-na | `vordlus.json`, jaotis „Metoodika võrdlus“ | saidi ehitus, brauserikontroll | kood valmis (`oks.vordlus`, `scripts/vordle_metoodikad.py`, jaotis `compare.js`), kontrollitud piloodi andmetel; CSV-d luuakse pärast sammu 6 |
 | 4 | Avaldamine: v1 (commit `5aa4596`) peaaadressil, v2 aadressil `/v2/` | `pages.yml` ehitab mõlemad, v1-l on lingiga märge | töövoo kuiv jooks kohapeal | tehtud: kuiv jooks läbis (mõlemad lehed, märke-rida v1-l) |
