@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import time
@@ -308,11 +309,24 @@ def _join_median(out: dict[str, pl.DataFrame], med: dict[str, pl.DataFrame]) -> 
     return res
 
 
+def _layer_cache(cache_dir: Path, layer_id: str, params: stats.Params, unpaired_boot: bool) -> Path:
+    """Kihi vahemälu kaust; nimi sõltub parameetritest ja sisendfailide (plokid, sagedustabel) muutmisaegadest."""
+    inputs = [
+        config.BLOCKS / f"{layer_id}.parquet",
+        pipeline.blkmed_path(layer_id),
+        pipeline.val_path(layer_id),
+    ]
+    stamp = [f.stat().st_mtime_ns if f.exists() else 0 for f in inputs]
+    key = json.dumps([sorted(params.__dict__.items()), unpaired_boot, stamp], default=str)
+    return cache_dir / f"{layer_id}__{hashlib.sha256(key.encode()).hexdigest()[:16]}"
+
+
 def run(
     params: stats.Params | None = None,
     only: set[str] | None = None,
     out_dir: Path | None = None,
     unpaired_median_boot: bool = True,
+    cache_dir: Path | None = None,
 ) -> dict[str, pl.DataFrame]:
     """Analüüsi kõik plokitabelid ja kirjuta tulemused.
 
@@ -326,6 +340,10 @@ def run(
         Väljundkaust (vaikimisi ``data/tulemused``).
     unpaired_median_boot
         Kas arvutada paaritamata mediaanide vahe bootstrap (tundlikkuse variantides ei kasutata).
+    cache_dir
+        Kui antud, salvestatakse iga kihi tulemus siia ja katkenud jooks jätkub valmis kihtidest
+        (võti: parameetrid ja sisendfailide muutmisajad; vt ``_layer_cache``). Koodi muutmisel tuleb
+        vahemälu kustutada, sest kood ei ole võtme osa.
     """
     params = params or stats.Params()
     out_dir = out_dir or config.RESULTS
@@ -349,6 +367,19 @@ def run(
         if not path.exists() or (only and r["id"] not in only):
             continue
         t0 = time.time()
+        cache = _layer_cache(cache_dir, r["id"], params, unpaired_median_boot) if cache_dir else None
+        if cache is not None and cache.is_dir():
+            for key, lst in (
+                ("paarid", pairs),
+                ("lahtrid", cells),
+                ("klassid", cls_tabs),
+                ("algklassid", alg_tabs),
+            ):
+                if (cache / f"{key}.parquet").exists():
+                    lst.append(pl.read_parquet(cache / f"{key}.parquet"))
+            diag.extend(json.loads((cache / "diagnostika.json").read_text(encoding="utf-8")))
+            log.info("%s: vahemälust", r["id"])
+            continue
         tbl = pl.read_parquet(path)
         res_m = res_effective(r["spatial_resolution"])
         out = stats.analyse_layer(tbl, u, res_m, params, W)
@@ -367,8 +398,21 @@ def run(
                 lst.append(
                     out[key].with_columns(pl.lit(r["id"]).alias("layer_id"), pl.lit(res_m).alias("res_m"))
                 )
-        for d in diagnostics(tbl, u):
-            diag.append({"layer_id": r["id"], **d})
+        layer_diag = [{"layer_id": r["id"], **d} for d in diagnostics(tbl, u)]
+        diag.extend(layer_diag)
+        if cache is not None:
+            tmp = cache.with_name(cache.name + ".tmp")
+            tmp.mkdir(parents=True, exist_ok=True)
+            for key, lst in (
+                ("paarid", pairs),
+                ("lahtrid", cells),
+                ("klassid", cls_tabs),
+                ("algklassid", alg_tabs),
+            ):
+                if lst and "layer_id" in lst[-1].columns and lst[-1]["layer_id"][0] == r["id"]:
+                    lst[-1].write_parquet(tmp / f"{key}.parquet")
+            (tmp / "diagnostika.json").write_text(json.dumps(layer_diag, default=float), encoding="utf-8")
+            tmp.rename(cache)  # kaust ilmub alles siis, kui kõik failid on kirjutatud
         log.info("%s: %.1f s, %d paari", r["id"], time.time() - t0, out["paarid"].height)
 
     def _note(r: dict[str, object]) -> str:
@@ -485,7 +529,10 @@ _KEYS = ["layer_id", "unit_level", "unit_code", "pair"]
 
 
 def sensitivity(
-    base: stats.Params, base_pairs: pl.DataFrame, variants: dict[str, dict[str, object]] | None = None
+    base: stats.Params,
+    base_pairs: pl.DataFrame,
+    variants: dict[str, dict[str, object]] | None = None,
+    cache_dir: Path | None = None,
 ) -> pl.DataFrame:
     """Käivita analüüs variantparameetritega ja võrdle põhijooksuga.
 
@@ -497,6 +544,8 @@ def sensitivity(
         Põhijooksu ``paarid`` (``run`` tulemus).
     variants
         ``{nimi: {parameeter: väärtus}}``; vaikimisi ``VARIANTS``.
+    cache_dir
+        Kihtide vahemälu (``run``), et katkenud jooks saaks jätkata.
 
     Returns
     -------
@@ -519,6 +568,7 @@ def sensitivity(
             None,
             config.RESULTS / f"tundlikkus_{name}",
             unpaired_median_boot=False,
+            cache_dir=cache_dir,
         )
         v = res["paarid"].select(
             *_KEYS,
