@@ -11,6 +11,6 @@ Kontrollnimekiri täisjooksu ja teise etapi jaoks. Iga samm märgitakse tehtuks 
 | 5 | Analüüs: `oks analyse` (põhijooks) | `data/tulemused/paarid.parquet` jt mediaaniveergudega | kõigi kihtide read olemas | |
 | 6 | Tulemustabelid: `oks kaasnev` | `kaasnev_*.parquet` mediaanidega | read olemas, pindalad v1-ga samad | |
 | 7 | Tundlikkus: `oks analyse --sensitivity` | `data/tulemused/tundlikkus.csv` (mediaanipõhine) | 5 varianti × 2 taset | |
-| 8 | Kontrollskriptid: mediaanide sõltumatu ümberarvutus, ruff-vigade parandus | `valideeri_*.py` töötavad, 0 lahknevust | `ruff check .` roheline | |
+| 8 | Kontrollskriptid: mediaanide sõltumatu ümberarvutus, ruff-vigade parandus | `valideeri_*.py` töötavad, 0 lahknevust | `ruff check .` roheline | kood valmis: V8 (mediaanid sagedustabelist) piloodi andmetel 0 lahknevust, `ruff check .` roheline; täisjooksu kontroll sammus 10 |
 | 9 | Dokumentatsioon: `metoodika.md`, `keskmiste_arvutus.md` (v1 märge), `README.md`, genereeritud `docs/*.md` | tekstid vastavad v2-le | käsitsi läbivaatus | |
 | 10 | Lõppkontroll ja lõpparuanne | kõik testid, kontrollskriptid, sait, `git diff --stat 5aa4596..HEAD` vastab nimekirjale | lõpparuanne | |
