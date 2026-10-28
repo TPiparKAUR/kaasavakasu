@@ -1,5 +1,5 @@
 id,meetod,markus
-biotorje_2022,paaritatud (põllumassiivid rasteriseeritud 10 m),""
+biotorje_2022,paaritatud (vektor rasteriseeritud 10 m),""
 elupaigahuve_pakkumine_2022_10m,paaritatud (plokk × alamökosüsteem),""
 mullasusinik_aasta_keskmine_2022_10m,paaritatud (plokk × alamökosüsteem),""
 mullasusinik_aasta_sotsiaalne_kulu_2022_10m,paaritatud (plokk × alamökosüsteem),""
@@ -20,15 +20,18 @@ kasemahl_hind_2022_10m,paaritatud (plokk × alamökosüsteem),""
 mustikad_pohlad_hind_2022_10m,paaritatud (plokk × alamökosüsteem),""
 kasemahl_saagikus_2020_10m,paaritatud (plokk × alamökosüsteem),""
 kliimaregulatsioon_2022_5m,paaritatud (plokk × alamökosüsteem),""
+lamm_grd1000_am_drained_2022,paaritatud (vektor rasteriseeritud 10 m),Madalama lahutusvõimega kiht (1 km). Arvutuseks viidud baaskaardi 10 m lahutusvõimele; seisundite erinevus tuleb ainult 1 km ruutude vahelistest erinevustest.
 ohusaaste_puhverdusvoime_2022_5m,paaritatud (plokk × alamökosüsteem),""
 erosioon_p_kg_ha_a_2022_10m,paaritatud (plokk × alamökosüsteem),""
 ohusaaste_puhverdusvoime_eur_ha_2022_5m,paaritatud (plokk × alamökosüsteem),""
 vee_reguleerimisvoime_vol_ha_linnalised_teed_veekogud_2022_10m,paaritatud (plokk × alamökosüsteem),""
 vee_reguleerimisvoime_eur_ha_linnalised_teed_veekogud_2022_10m,paaritatud (plokk × alamökosüsteem),""
 erosioon_c_kg_ha_a_2022_10m,paaritatud (plokk × alamökosüsteem),""
+vee_puhastamise_potentsiaal_p_eur_ha_2022_930m,paaritatud (plokk × alamökosüsteem),Madalama lahutusvõimega kiht (930 m). Arvutuseks viidud baaskaardi 10 m lahutusvõimele; seisundite erinevus tuleb ainult 930 m ruutude vahelistest erinevustest.
+vee_puhastamise_potentsiaal_p_kg_ha_a_2022_930m,paaritatud (plokk × alamökosüsteem),Madalama lahutusvõimega kiht (930 m). Arvutuseks viidud baaskaardi 10 m lahutusvõimele; seisundite erinevus tuleb ainult 930 m ruutude vahelistest erinevustest.
 erosioon_p_eur_ha_a_2022_10m,paaritatud (plokk × alamökosüsteem),""
 sidusus_1km_2022_10m,paaritatud (plokk × alamökosüsteem),""
-toiduteenus_2022,paaritatud (põllumassiivid rasteriseeritud 10 m),""
+toiduteenus_2022,paaritatud (vektor rasteriseeritud 10 m),""
 okosusteemide_tugi_tolmeldajatele_2022_10m,paaritatud (plokk × alamökosüsteem),""
 lamm_grd1000_am_drained_2022,segumudel (uuriv),"1 km ruudustik, segumudel"
 vee_puhastamise_potentsiaal_p_eur_ha_2022_930m,segumudel (uuriv),"930 m ruudustik, segumudel"
