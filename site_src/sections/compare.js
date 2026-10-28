@@ -1,6 +1,6 @@
   /* ---------- Metoodika võrdlus (v1 → v2) ---------- */
   const V1_URL = 'https://tpiparkaur.github.io/kaasavakasu/';
-  const share = (x) => (x === null || x === undefined || !Number.isFinite(x) ? '–' : `${nf(0).format(x * 100)} %`);
+  const share = (x, d = 0) => (x === null || x === undefined || !Number.isFinite(x) ? '–' : `${nf(d).format(x * 100)} %`);
   const medianOf = (xs) => { const v = xs.filter((x) => Number.isFinite(x)).sort((a, b) => a - b); if (!v.length) return null; const m = v.length >> 1; return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2; };
   function compareView(root) {
     const V = D.V;
@@ -30,7 +30,7 @@
       const sum = (c) => g.reduce((a, r) => a + (r[c] || 0), 0);
       const tr = h('tr', {}, tb1); h('td', {}, tr, txt); h('td', { class: 'num' }, tr, String(g.length));
       h('td', { class: 'num' }, tr, `${share(medianOf(g.map((r) => r.kate_v1)))} → ${share(medianOf(g.map((r) => r.kate_v2)))}`);
-      h('td', { class: 'num' }, tr, share(medianOf(g.map((r) => r.abs_rel_valim_mediaan))));
+      h('td', { class: 'num' }, tr, share(medianOf(g.map((r) => r.abs_rel_valim_mediaan)), 1));
       h('td', { class: 'num' }, tr, `${sum('olulisi_v1')} → ${sum('olulisi_v2_keskmine')}`);
     }
     h('p', { class: 'note' }, c1, 'Kui NoData loetakse nulliks, kasvab kaetud pindala ja keskmine väheneb: pikslid, kus teenust ei ole, lähevad nüüd arvutusse nullina. Erandkihtides (§) jäeti NoData välja nagu v1-s, seega nende keskmine ei muutu. Madalama lahutusvõimega kihid (‡) arvutati v1-s ainult segumudeliga; v2-s viidi need 10 m lahutusvõimele.');
@@ -73,7 +73,7 @@
     const tb4 = h('tbody', {}, t4);
     for (const r of rows) {
       const tr = h('tr', {}, tb4); h('td', {}, tr, r.nimi); h('td', {}, tr, V.pohjused[r.pohjus]);
-      for (const c of ['kate_v1', 'kate_v2', 'abs_rel_valim_mediaan', 'abs_rel_statistik_mediaan']) h('td', { class: 'num' }, tr, share(r[c]));
+      for (const c of ['kate_v1', 'kate_v2', 'abs_rel_valim_mediaan', 'abs_rel_statistik_mediaan']) h('td', { class: 'num' }, tr, share(r[c], c.startsWith('abs') ? 1 : 0));
       for (const c of ['olulisi_v1', 'olulisi_v2_keskmine', 'olulisi_v2_mediaan', 'suund_muutus', 'hinnang_lisandus']) h('td', { class: 'num' }, tr, String(r[c] ?? '–'));
     }
     h('p', { class: 'note' }, c4, 'Keskmise muutus ja „keskmine → mediaan“ on kihi tüübi × seisundi lahtrite suhtelise erinevuse mediaan (absoluutväärtus). Olulisi = ökosüsteemi tasandi paaritatud hinnangud, q < 0,05.');
