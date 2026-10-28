@@ -168,6 +168,17 @@ def test_cluster_index_bounds() -> None:
     assert idx.max() < total
 
 
+def test_cluster_expr_matches_cluster_index() -> None:
+    rng = np.random.default_rng(3)
+    e = np.concatenate([rng.integers(360, 750, 500), [368, 369, 740]]).astype(np.int64)
+    n = np.concatenate([rng.integers(6370, 6640, 500), [6376, 6377, 6635]]).astype(np.int64)
+    for cs in (5, 10, 20):
+        got = pl.DataFrame({"e_km": e.astype(np.int16), "n_km": n.astype(np.int16)}).select(
+            stats.cluster_expr(cs)
+        )
+        assert np.array_equal(got.to_series().to_numpy(), stats.cluster_index(e, n, cs)[0])
+
+
 def test_eta_squared_pure_class_effect() -> None:
     # kaks klassi, ühtlane sisemine väärtus -> η² = 1
     tbl = pl.DataFrame(

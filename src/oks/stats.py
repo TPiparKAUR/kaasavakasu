@@ -133,6 +133,15 @@ def cluster_index(e_km: NDArray[np.int64], n_km: NDArray[np.int64], cs: int) -> 
     return ce * ncn + cn, nce * ncn
 
 
+def cluster_expr(cs: int) -> pl.Expr:
+    """``cluster_index`` Polarsi avaldisena (veerud ``e_km``, ``n_km``); sama täisarvjagamine ja piirid."""
+    ncn = -(-(N_MAX - N_MIN) // cs)
+    nce = -(-(E_MAX - E_MIN) // cs)
+    ce = ((pl.col("e_km").cast(pl.Int64) - E_MIN) // cs).clip(0, nce - 1)
+    cn = ((pl.col("n_km").cast(pl.Int64) - N_MIN) // cs).clip(0, ncn - 1)
+    return ce * ncn + cn
+
+
 def _boot_weights(n_clusters: int, n_boot: int, seed: int) -> NDArray[np.float64]:
     """Multinoomsed klastrite kaalud (``n_boot`` x ``n_clusters``); sama kõigi kihtide jaoks."""
     rng = np.random.default_rng(seed)
@@ -611,17 +620,18 @@ def analyse_layer_median(
     if unpaired_boot:
         lf = median.scan(val_dir)
         for key, ks in koods.items():
-            rows = lf.filter(pl.col("kood").is_in(ks)).select("e_km", "n_km", "value", "n").collect()
-            cl = cluster_index(
-                rows["e_km"].to_numpy().astype(np.int64),
-                rows["n_km"].to_numpy().astype(np.int64),
-                p.cluster_blocks,
-            )[0]
-            # korduvad (klaster, väärtus) read on lubatud: kumulatiivne loendus annab sama täpse mediaani
-            boots[key] = median.cluster_boot_medians(
-                cl.astype(np.int32), rows["value"].to_numpy(), rows["n"].to_numpy().astype(np.int64), W
+            # (klaster, väärtus) kaupa koondatud loendus annab sama täpse mediaani kui pikslite read;
+            # voogkoondamine hoiab mälu väikesena ka sadade miljonite sagedustabeli ridade korral
+            rows = (
+                lf.filter(pl.col("kood").is_in(ks))
+                .group_by(cluster_expr(p.cluster_blocks).alias("cl"), "value")
+                .agg(pl.col("n").cast(pl.Int64).sum())
+                .collect(engine="streaming")
             )
-            del rows, cl
+            boots[key] = median.cluster_boot_medians(
+                rows["cl"].to_numpy().astype(np.int32), rows["value"].to_numpy(), rows["n"].to_numpy(), W
+            )
+            del rows
 
     pair_rows: list[dict[str, object]] = []
     for ui in range(nu):
