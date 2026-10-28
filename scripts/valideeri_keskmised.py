@@ -331,7 +331,8 @@ def v5_site(site: Path, lahtrid: pl.DataFrame, ks: pl.DataFrame, kt: pl.DataFram
 def v6_logic(ks: pl.DataFrame, kt: pl.DataFrame, lahtrid: pl.DataFrame) -> dict:
     """Loogikakontrollid, mis ei sõltu ühestki torustiku sammust."""
     out: dict = {}
-    res = layer_res()
+    # metoodika v2: madalama lahutusvõimega kihid (930 m) on arvutatud 10 m lahutusvõimel
+    res = {k: min(v, 10.0) for k, v in layer_res().items()}
     # pindala: n_valid * res^2 <= pindala (ha), katvus <= 1
     k = kt.filter(pl.col("n_valid") > 0).with_columns(
         pl.col("layer_id").replace_strict(res, default=10.0, return_dtype=pl.Float64).alias("res")
