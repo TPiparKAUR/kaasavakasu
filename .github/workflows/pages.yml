@@ -21,14 +21,33 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # v1 leht ehitatakse commit'ist V1_COMMIT
       - uses: astral-sh/setup-uv@v5
+      # Metoodika v1 (keskmised) jääb peaaadressile muutmata kujul, v2 (mediaanid) on aadressil /v2/ (ainult otselink,
+      # v1 lehel viidet ei ole; v2 lehed on märgitud noindex). Vahetamiseks: ehita v2 otse _site-i ja eemalda v1 samm.
+      - name: Ehita v1 leht (commit V1_COMMIT) peaaadressile
+        env:
+          V1_COMMIT: 5aa4596
+        run: |
+          git worktree add ../v1 "$V1_COMMIT"
+          (cd ../v1 && uv sync --frozen && uv run python -m oks site --out "$GITHUB_WORKSPACE/_site")
       - run: uv sync --frozen
-      - run: uv run python -m oks site --out _site
+      - run: uv run python -m oks site --out _site/v2
+      - name: v2 lehed otsingumootoritest välja
+        run: |
+          for f in _site/v2/*.html; do
+            sed -i '0,/<head>/s||<head>\n<meta name="robots" content="noindex, nofollow">|' "$f"
+          done
       - name: Kontrolli, et leht ja andmed on olemas
         run: |
-          test -s _site/index.html
-          test -s _site/data/paarid.json
-          test -s _site/oks-seisund.html
+          for d in _site _site/v2; do
+            test -s $d/index.html
+            test -s $d/data/paarid.json
+            test -s $d/oks-seisund.html
+          done
+          grep -q 'name="robots" content="noindex' _site/v2/index.html
+          ! grep -q 'name="robots"' _site/index.html
       - if: github.ref_name == github.event.repository.default_branch
         uses: actions/configure-pages@v5
       - if: github.ref_name == github.event.repository.default_branch

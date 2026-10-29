@@ -3,6 +3,13 @@
 Dokument kirjeldab, **mida** analüüsiti, **kuidas** ja **millised eeldused ning piirangud** kehtivad.
 Kõik arvud, mis siin on, on kontrollitud andmetest või testidest; kus midagi on eeldus, on see nii märgitud.
 
+**Metoodika v2 (2026-10).** Peamine statistik on **täpne pikslimediaan** (iga piksel üks vaatlus); keskmine arvutatakse
+kõrvale. NoData loetakse nulliks (v.a viis erandkihti), vektorkihtides on polügoonist väljas, tühi ja −1 null ning
+kattumisel võetakse suurim väärtus; madalama lahutusvõimega kihid (930 m, 1 km) on viidud 10 m lahutusvõimele.
+Otsused ja põhjendused: [metoodika_v2_otsused.md](metoodika_v2_otsused.md). Metoodika v1 (keskmised, NoData välja)
+kirjeldus on commit'is `5aa4596`; erinevused on veebilehe jaotises „Metoodika võrdlus“ ja failides
+`data/tulemused/vordlus_*.csv` (`scripts/vordle_metoodikad.py`).
+
 ## 1. Küsimus
 
 Kui seisund liigub ühe ökosüsteemi või alamökosüsteemi sees klasside **vilets → keskmine → hea** vahel:
@@ -60,8 +67,8 @@ Analüüsitakse `eval = TRUE` kihid (31 teenust tabelis; tulemustes on **30**, s
 |---|---|---|
 | Rastrid 5 ja 10 m | 25 | Põhianalüüs (plokk × alamökosüsteem, § 4) |
 | Põllumassiivide vektorid (`toiduteenus_2022`, `biotorje_2022`) | 2 | Rasteriseeritud 10 m ruudustikule (`oks.fields`), seejärel põhianalüüs. `biotorje_2022` on tabelis kaks kihti (`pestitshind_ha` ja `pestits_vahenemine`, „Kasutada ühte”); kasutatud on `pestits_vahenemine`, sest `pestitshind_ha` on sama muutuja rahas |
-| Rastrid 930 m | 2 | Segumudel (§ 7); **uuriv** |
-| 1 km ruudustiku vektor `lamm_grd1000_am_drained_2022` | 1 | Segumudel (§ 7); **uuriv** |
+| Rastrid 930 m | 2 | **Madalama lahutusvõimega**: viidud baaskaardi 10 m lahutusvõimele (lähim naaber, `pipeline.resample_to_10m`), seejärel põhianalüüs; segumudel (§ 7) võrdluseks |
+| 1 km ruudustiku vektor `lamm_grd1000_am_drained_2022` (väli `lammide_taastamise_kulu`, EUR/ha/a) | 1 | **Madalama lahutusvõimega**: rasterdatud 10 m ruudustikule, seejärel põhianalüüs; segumudel (§ 7) võrdluseks |
 
 Metaandmetes `biotorje_kahjuritorje_vahenemine` ei ole arhiivis eraldi failina; see on `biotorje_2022.gpkg` väli.
 Arhiivis on neli faili, mida ametlikus tabelis ei ole (`Elupaigahuve/.tif`, `Loodusannid/johvikad_hind_2022_10m_cog_mode.tif`,
@@ -75,15 +82,18 @@ Arhiivis on neli faili, mida ametlikus tabelis ei ole (`Elupaigahuve/.tif`, `Loo
    (teenuse väärtusi ei interpoleerita). Pärast seda sõltub iga teenusepiksli klass ühe baaskaardi piksli väärtusest piksli keskpunktis.
    See on proovivõtt, mitte pindalakaalutud enamusklass; kontrollitud kihil `sidusus_1km_2022_10m`: 10 m proovivõtu pindala erineb täisresolutsiooni
    (5 m) pindalast kõigis ökosüsteemi × seisundi klassides < 0,03 %.
-2. **NoData ja sentinel-väärtused.** Kehtivad on pikslid, mis pole rastri deklareeritud NoData, pole NaN ja millel on
-   baaskaardi seisund. **Erand (parandus 2026-10-19):** kihtides, kus tabelis deklareeritud NoData on **0**
-   (`seened_hind_2022_10m`, `ohusaaste_puhverdusvoime_2022_5m`, `ohusaaste_puhverdusvoime_eur_ha_2022_5m`,
-   `puitne_biomass_c_t_ha_niit_sum_2022_5m`, `puitne_biomass_c_t_ha_soo_sum_2022_5m`, `puitne_biomass_c_eur_ha_ets_…`),
-   loetakse 0 **kehtivaks nulliks** (lähtekasu loogikakontroll: nullid kuuluvad keskmisse). Esimene versioon jättis need nullid välja ja
-   andis seega ainult nullist erinevate pikslite keskmise; ohusaaste puhverdamisel loetakse ka 255 nulliks (tabeli märkus
-   „255 käitub kui 0”). Klass, kus nullist erinevaid piksleid on alla 1 %, loetakse teenust mitte pakkuvaks ja jäetakse
-   seisundi muutuse analüüsist välja (`catalog.POSITIVE_MIN`). `pohlad_saagikus_2020_10m` −1 on tabeli järgi kehtiv väärtus
+2. **NoData ja sentinel-väärtused (metoodika v2).** Rastri deklareeritud NoData loetakse **kehtivaks nulliks** (eeldus:
+   NoData tähendab, et teenust seal ei ole); samuti baaskaardi pikslid, mis jäävad teenuse rastri ulatusest välja
+   (`aggregate.extended_grid`). **Erandkihid** (`catalog.NODATA_EXCLUDED`), kus NoData tähendab „hindamata“ ja jääb
+   valimist välja nagu v1-s: `mustikad_pohlad_saagikus_2020_10m`, `mustikad_pohlad_hind_2022_10m`,
+   `pohlad_saagikus_2020_10m`, `kasemahl_saagikus_2020_10m`, `kasemahl_hind_2022_10m` (kasemahla kihis puuduvad andmed
+   soo- ja kõdusoometsades; nullina langetaksid need metsa mediaani tegelikkusest madalamaks). Erandkihtides on deklareeritud
+   NoData 0 siiski null. Ohusaaste puhverdamisel loetakse ka 255 nulliks (tabeli märkus „255 käitub kui 0”).
+   Rastrites NaN-väärtusi ei esine (kontrollitud). Klass, kus nullist erinevaid piksleid on alla 1 %, saab tulemustabelis
+   staatuse „ei paku“ (`catalog.POSITIVE_MIN`). `pohlad_saagikus_2020_10m` −1 on tabeli järgi kehtiv väärtus
    (`has_negative = 1`).
+   **Vektorkihid** (`oks.fields.rasterize_attribute`): polügoonist väljas, tühi (NULL/NaN), −1 ja nodata = 0; kattuvate
+   polügoonide korral võetakse **suurim** väärtus.
 3. **Ploki jaotus.** Piksel kuulub 1 km plokki (EPSG:3301 ruudustik, joondatud 1000 m kordsetele) piksli **keskpunkti** järgi.
 4. **Täisarvude ületäitumine.** Pikslite arv hoitakse `Int64`-ina (Int32 summa ületäitub ~2,1 miljardil); testis ja kontrollis leitud.
 5. **Allalaadimise terviklus.** Suurus kontrollitakse serveri `Content-Length` vastu ja poolik fail jätkatakse (`Range`).
@@ -96,18 +106,30 @@ Iga teenuse jaoks arvutatakse **1 km plokk × detailne klass** kohta: pikslite a
 (`oks.aggregate`). Kõik edasised hinnangud tuletatakse neist summadest, nii et toorrastrid ei jää kettale.
 Tulemus: `data/derived/plokid/<kiht>.parquet`.
 
+Mediaanide jaoks (metoodika v2) kirjutatakse samal läbikäigul **kadudeta sagedustabel**: iga (1 km plokk, detailne klass,
+väärtus) kohta pikslite arv (`aggregate.value_counts`, `plokid/<kiht>__val/n<ploki-rida>.parquet`). Sellest saab iga
+mediaani arvutada täpselt (iga piksel üks vaatlus, ilma vahemike või lähenditeta). Plokimediaanid (plokk × alamökosüsteem ×
+seisund ja plokk × ökosüsteem × seisund; kõik pikslid ja ainult nullist erinevad) arvutatakse ühe sortimisega
+(`aggregate.segment_medians`, `plokid/<kiht>__blkmed.parquet`). Ülemaailmne mediaan leitakse sagedustabelist poolitusega
+üle ujukomaarvude järjestuse (`oks.median.ValueTable`). Tühja valimi mediaan on NaN.
+
 ## 5. Hinnangud
 
 Seisundid on indekseeritud 0 = vilets, 1 = keskmine, 2 = hea; võrdlused (halvem → parem): vilets → keskmine,
-keskmine → hea, vilets → hea. **Δ = parema seisundi keskmine − halvema seisundi keskmine.**
-Suhteline muutus = Δ / |halvema keskmine| (tühi, kui nimetaja ≈ 0).
+keskmine → hea, vilets → hea. **Δ = parema seisundi mediaan − halvema seisundi mediaan** (metoodika v2; veerud `*_med`).
+Sama arvutus keskmistega (veerud ilma `_med` järelliiteta) on tulemustes alles.
+Suhteline muutus = Δ / |halvema mediaan| (tühi, kui nimetaja ≈ 0).
+
+Mediaan valiti, sest teenuste jaotused on tugevalt viltused ja nullirohked: keskmist määravad üksikud suured väärtused,
+mediaan näitab tüüpilist kohta. Kui teenus esineb vähem kui pooltel pikslitel, on mediaan 0; siis näidatakse lisaks
+**mediaani kohtades, kus teenus esineb** (väärtus > 0) ja esinemise osa.
 
 ### 5.1 Paaritatud hinnang (peamine)
 
 * **Stratum** = (1 km plokk, alamökosüsteem). Stratumi mõlemad seisundid peavad olema esindatud vähemalt
   `min_area_ha = 1` ha ulatuses (10 m raster: 100 pikslit; 5 m: 400 pikslit).
-* Stratumi erinevus `d = keskmine_parem − keskmine_halvem`; kaal `w = n_a·n_b / (n_a + n_b)` (pöördvõrdeline
-  dispersiooniga, kui piksli dispersioon on stratumites sama).
+* Stratumi erinevus `d = mediaan_parem − mediaan_halvem` (stratumi täpsed pikslimediaanid); kaal `w = n_a·n_b / (n_a + n_b)`
+  (sama mis keskmiste puhul).
 * Alamökosüsteemi hinnang = kaalutud keskmine selle alamökosüsteemi stratumitest; **ökosüsteemi hinnang** =
   kaalutud keskmine **kõigist** ökosüsteemi stratumitest. Kuna iga võrdlus tehakse sama alamökosüsteemi sees, on
   ökosüsteemi hinnang automaatselt **koosseisu suhtes kohandatud**.
@@ -118,7 +140,8 @@ Suhteline muutus = Δ / |halvema keskmine| (tühi, kui nimetaja ≈ 0).
 
 ### 5.2 Paaritamata hinnang (täiendav)
 
-Pindalakaalutud keskmiste vahe **kõigil** pikslitel ühes ühikus. Alamökosüsteemi tasemel on see mõistlik täiendus
+Mediaanide vahe **kõigil** pikslitel ühes ühikus. Ebakindlus: sama 10 km klastrite bootstrap; iga korduse mediaan on
+täpne (klastri piksleid võetakse kaaluga = valikute arv, `median.cluster_boot_medians`). Alamökosüsteemi tasemel on see mõistlik täiendus
 (kasutab kõiki andmeid). **Ökosüsteemi tasemel on see toorhinnang**: seisundiklasside alamökosüsteemide koosseis võib
 erineda ja moonutab tulemust (Simpsoni paradoks). Lehel on see märgitud.
 
@@ -151,11 +174,13 @@ Lähtekasu tabelid (`oks.kaasnev`) ei kasuta plokitabelit, vaid **klassitabelit*
 (sh seisundita ja rannik) pikslite arv, kehtivate, nullide, positiivsete ja negatiivsete arv ning Σx, Σx² (`aggregate.CLS_STATS`).
 Kehtivus on sama mis plokitabelis.
 
-* **Keskväärtus** rida kohta = Σx / kehtivate pikslite arv rea klassides, st kogu klassi kehtiva pindala kohta, nullid kaasa arvatud.
+* **Keskväärtus** rida kohta = **mediaan** rea klasside kõigist kehtivatest pikslitest (klasside pikslite ühend, mitte
+  klasside mediaanide mediaan; `kaasnev.median_table`), nullid kaasa arvatud; lisaks mediaan kohtades, kus teenus esineb.
+  Keskmine = Σx / kehtivate pikslite arv on alles (Excel, stsenaariumi koguhulgad).
   Rida on `(ökosüsteemitüüp = alam_kood, seisund)`; tüüp koondab selle tähtklassid (nt A, B → hea).
 * **Pindala (ha)** = baaskaardi 5 m pikslid × 25 m².
-* **Suured ökosüsteemid** (niit, soo, mets, põld, rannik) = pikslite järgi kaalutud keskmine (st kehtiva pindalaga kaalutud
-  tüüpide keskmine); „Asustus ja muu” ei liideta.
+* **Suured ökosüsteemid** (niit, soo, mets, põld, rannik): mediaan kõigi tüüpide pikslitest; keskmine = pikslite järgi kaalutud
+  keskmine; „Asustus ja muu” ei liideta.
 * **Kuivad ja märjad metsad** (kommentaar lähtekasule): kuivad = salumets, palumets, laanemets, loomets, nõmmemets; märjad = soovikumets, samblasoomets, rohusoomets, kõdusoomets, rabastuv mets (`kaasnev.DRY_FOREST`, `WET_FOREST`). „Muu (metsa)kooslus“ kuulub ainult kogu metsa hulka. Jaotus näitab, et seisundi ja teenuse seos erineb kuivades ja märgades metsades (nt mustikad: kuivades metsades 55 → 111 kg/ha viletsast heasse, märgades metsades hea seisundis „ei paku“), mistõttu metsa ühine keskmine peidab selle.
 * **Staatus:** `ei hinnatud`, kui kehtivaid piksleid alla 5 % klassi pikslitest; `ei paku`, kui nullist erinevaid alla 1 %
   kehtivatest (lähtekas: „väga-väga vähe”); `osaline kate`, kui kehtivaid alla 90 %; muidu `ok`. Lävendid on parameetrid
@@ -178,7 +203,8 @@ Kehtivus on sama mis plokitabelis.
   bootstrap-jaotuse 2,5. ja 97,5. protsentiil; kahepoolne p = 2·min(P(Δ* ≤ 0), P(Δ* ≥ 0)),
   alampiir 1/(B+1). Klastri-bootstrapi üldmõte: Künsch (1989), blokk-bootstrap sõltuvatel andmetel.
 * **Mitmene testimine.** Benjamini–Hochbergi FDR (Benjamini & Hochberg, 1995) eraldi **ökosüsteemi** ja **alamökosüsteemi**
-  tasemel, üle kõigi teenuste, ühikute ja seisundipaaride; `q < 0,05` = „oluline”.
+  tasemel, üle kõigi teenuste, ühikute ja seisundipaaride; `q < 0,05` = „oluline”. Mediaani- ja keskmisepõhised p-väärtused
+  on eraldi perekonnad (`q_m_med`, `q_u_med`, `q_wilcoxon_med` ja `q_m`, `q_u`, `q_wilcoxon`).
 * **Piisavus.** Hinnang on esitatud ja testitav ainult siis, kui on vähemalt `min_strata = 20` paari ja `min_clusters = 5`
   klastrit (paaritamata: vähemalt 20 plokki kummaski seisundis ja 5 klastrit).
 * **Praktiline olulisus.** Statistiline olulisus ei tähenda, et muutus on suur. Veebileht lubab filtreerida
@@ -193,10 +219,18 @@ Kehtivus on sama mis plokitabelis.
 
 ### 6.2 Tundlikkus
 
-`oks.analysis.sensitivity` kordab analüüsi teiste klastri suurustega (5 ja 20 km) ja minimaalse alaga (0,25 ja 4 ha).
-Tulemused on `data/tulemused/tundlikkus.csv` ja kokkuvõte `docs/tulemused.md` § 6: paaritatud olulistest hinnangutest säilis oluliseks sama märgiga 96–100 % (ökosüsteem) ja 88–99 % (alamökosüsteem; 4 ha puhul langeb osa hinnanguid andmete puudumise tõttu välja); Δ astakkorrelatsioon põhijooksuga ≥ 0,89.
+`oks.analysis.sensitivity` kordab analüüsi teiste klastri suurustega (5 ja 20 km), minimaalse alaga (0,25 ja 4 ha) ja teise
+juhusliku seemnega. Metoodika v2-s võrreldakse mediaanipõhist paaritatud hinnangut (`delta_m_med`, `oluline_m_med`).
+Tulemused on `data/tulemused/tundlikkus.csv` ja kokkuvõte `docs/tulemused.md` § 6: põhijooksu olulistest hinnangutest säilis
+oluliseks sama märgiga 90–100 % (ökosüsteem) ja 86–100 % (alamökosüsteem); madalaim on variant „minimaalne ala 4 ha“, kus
+880 alamökosüsteemi hinnangul ei piisa andmetest. Δ astakkorrelatsioon põhijooksuga ≥ 0,86.
 
-## 7. Jämedad ruudustikud: segumudel (uuriv)
+## 7. Jämedad ruudustikud: segumudel (uuriv, võrdluseks)
+
+Metoodika v2-s on madalama lahutusvõimega kihtide põhihinnang 10 m lahutusvõimel (§ 2.3): iga 10 m piksel saab
+930 m / 1 km ruudu väärtuse. Ruudu sees on väärtus sama, seega seisundite erinevus tuleb ainult ruutude vahelistest
+erinevustest; tulemus on märgitud „madalam lahutusvõime“. Segumudel on alles võrdluseks (`paarid_segumudel.parquet`,
+`lahtrid_segumudel.parquet`).
 
 Kui teenuse ruut (930 m, 1 km) on suurem kui seisundiüksus, koosneb ruut mitmest klassist ja ruutu ei saa ühele seisundile omistada.
 Eeldatakse, et ruudu väärtus on klasside (ökosüsteem × seisund, 12 klassi + „muu”) pindalaosade lineaarne segu:
@@ -235,10 +269,13 @@ reaalboniteedist; seos seisundi ja boniteedi vahel on osaliselt definitsioonilin
 6. **Suund.** Positiivne Δ tähendab, et väärtus kasvab. Mõnel kihil ei tähenda kasv paremat teenust (nt erosiooni ärakanne;
    `kliimaregulatsioon`: väiksem väärtus = ühtlasem temperatuur). Märkused on iga kihi juures.
 7. **Ühikud.** Ühikud on tabelist; mitmel kihil on aastane ja ühekordne väärtus märgitud vaid kirjeldavas tekstis.
-8. **Jämedad ruudustikud** (§ 7) on uuriva iseloomuga.
+8. **Madalama lahutusvõimega kihid** (§ 7): hinnang 10 m lahutusvõimel kordab ruudu väärtust; segumudel on uuriva iseloomuga.
 9. **Litsents ja andmed.** Kasutustingimused tuleb kontrollida enne taasavaldamist. Toorrastreid repositooriumis ei hoita.
 10. **Isikuandmed.** Analüüs ei kasuta isikuandmeid (`toiduteenus` ja `biotorje` sisaldavad katastritunnuseid ja põllu-ID-sid; need ei
     ole tulemustes ega veebilehel).
+11. **NoData = 0** (§ 3) on eeldus, et NoData tähendab teenuse puudumist; erandkihtides tähendab see „hindamata“ ja jääb välja.
+12. **Mediaan ja skoorid.** Järjestusskaalal kihtidel on mediaan tüüpiline skoor; paarisarvu pikslite korral on mediaan kahe
+    keskmise väärtuse keskmine ja võib olla skooride vahel.
 
 ## 10. Valideerimine
 
@@ -246,14 +283,19 @@ reaalboniteedist; seos seisundi ja boniteedi vahel on osaliselt definitsioonilin
   kate, valikuline esinemine), BH-FDR võrdluskäsitsi, klastri indeksid, η², aggregeerimine tehisrastritega (joondatud ja nihutatud ruudustik,
   NoData ja sentinel), segumudel teadaolevate β-dega.
 * Pindala kontroll baaskaardiga ja täisresolutsiooni ristiks (§ 3).
+* Mediaanid: testid toore pikslivektori `numpy.median`-i vastu (`tests/test_median.py`, `tests/test_aggregate.py`,
+  `tests/test_stats.py`); sõltumatu ümberarvutus sagedustabelist Polarsi kumulatiivse summaga
+  (`scripts/valideeri_keskmised.py`, V8) ja toorrastrist ühe ploki-rea kohta (piloot).
 
 ## 11. Reprodutseerimine
 
 ```bash
 uv sync
-uv run python -m oks aggregate     # 25 rasterit: plokisummad ja jaotused (laeb ja kustutab toorfailid, ~1 h)
+uv run python -m oks aggregate     # kõik rastrid (930 m viiakse 10 m-le): plokisummad, sagedustabelid, jaotused (~2–3 h)
 uv run python -m oks fields        # põllumassiivid
 uv run python -m oks analyse       # statistika -> data/tulemused
+uv run python -m oks kaasnev       # tulemustabelid (tüüp x seisund, suured ökosüsteemid)
+uv run python scripts/vordle_metoodikad.py   # v1 -> v2 võrdlus -> data/tulemused/vordlus_*.csv
 uv run python -m oks site          # veebileht -> site/
 uv run pytest
 ```

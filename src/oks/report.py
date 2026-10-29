@@ -7,7 +7,7 @@ from pathlib import Path
 
 import polars as pl
 
-from . import catalog, config, nouded, stats
+from . import catalog, config, kaasnev_export, nouded, stats
 
 log = logging.getLogger(__name__)
 
@@ -108,7 +108,6 @@ def write_results(results: Path, out_md: Path) -> None:
     p = pl.read_parquet(results / "paarid.parquet")
     diag = pl.read_parquet(results / "diagnostika.parquet")
     units = pl.read_parquet(results / "uhikud.parquet")
-    notes = pl.read_csv(results / "teenused_lisa.csv")
     par = pl.read_csv(results / "parameetrid.csv").row(0, named=True)
     cat = catalog.build_catalogue(
         config.ROOT / "alusmaterjalid/metaandmed/layer_definition_checked_vrs2.csv",
@@ -120,11 +119,11 @@ def write_results(results: Path, out_md: Path) -> None:
         r["unit_code"]: r["nimi"]
         for r in units.filter(pl.col("unit_level") == "okosusteem").iter_rows(named=True)
     }
-    method = dict(zip(notes["id"], notes["meetod"], strict=True))
+    lowres = kaasnev_export.LOW_RES_LAYERS
     L: list[str] = [
         "# Tulemuste kokkuvõte",
         "",
-        "Genereeritud `oks.report.write_results`-ga failist `data/tulemused/paarid.parquet`. Meetod: [metoodika.md](metoodika.md).",
+        "Genereeritud `oks.report.write_results`-ga failist `data/tulemused/paarid.parquet`. Meetod: [metoodika.md](metoodika.md). Metoodika v2: hinnangud põhinevad täpsetel pikslimediaanidel (otsused: [metoodika_v2_otsused.md](metoodika_v2_otsused.md)).",
         "",
     ]
 
@@ -146,10 +145,10 @@ def write_results(results: Path, out_md: Path) -> None:
                 label,
                 d.height,
                 em.height,
-                int(em["oluline_m"].sum() or 0),
+                int(em["oluline_m_med"].sum() or 0),
                 eu.height,
-                int(eu["oluline_u"].sum() or 0),
-                int(d["kooskolas"].sum() or 0),
+                int(eu["oluline_u_med"].sum() or 0),
+                int(d["kooskolas_med"].sum() or 0),
             ]
         )
     L += [
@@ -171,7 +170,7 @@ def write_results(results: Path, out_md: Path) -> None:
     # 2. ökosüsteemi tase: suund ja olulisus
     L += ["## 2. Ökosüsteemide tase: mitu teenust muutub seisundi paranedes", ""]
     L.append(
-        "Paaritatud hinnang, ainult hinnangud, kus on piisavalt andmeid. „Kasvab” = Δ > 0 ja q < 0,05; „väheneb” = Δ < 0 ja q < 0,05."
+        "Paaritatud hinnang mediaanide põhjal, ainult hinnangud, kus on piisavalt andmeid. „Kasvab” = Δ > 0 ja q < 0,05; „väheneb” = Δ < 0 ja q < 0,05."
     )
     L.append("")
     rows = []
@@ -181,8 +180,8 @@ def write_results(results: Path, out_md: Path) -> None:
             d = e.filter((pl.col("unit_code") == code) & (pl.col("pair") == pair))
             if d.is_empty():
                 continue
-            up = d.filter(pl.col("oluline_m") & (pl.col("delta_m") > 0)).height
-            dn = d.filter(pl.col("oluline_m") & (pl.col("delta_m") < 0)).height
+            up = d.filter(pl.col("oluline_m_med") & (pl.col("delta_m_med") > 0)).height
+            dn = d.filter(pl.col("oluline_m_med") & (pl.col("delta_m_med") < 0)).height
             rows.append([name, pair.replace("→", " → "), d.height, up, dn, d.height - up - dn])
     L += [
         _md_table(rows, ["Ökosüsteem", "Seisundipaar", "Teenuseid", "Kasvab", "Väheneb", "Ei ole oluline"]),
@@ -190,30 +189,34 @@ def write_results(results: Path, out_md: Path) -> None:
     ]
 
     # 3. suurimad muutused (vilets -> hea)
-    L += ["## 3. Suurimad muutused (vilets → hea, paaritatud, olulised)", ""]
-    mixing_ids = {i for i, m in method.items() if m.startswith("segumudel")}
+    L += [
+        "## 3. Suurimad muutused (vilets → hea, paaritatud mediaanide põhjal, olulised)",
+        "",
+        "„Mediaan vilets/hea“ on kogu ökosüsteemi pikslite mediaan. Δ on samas 1 km plokis ja alamökosüsteemis arvutatud mediaanide vahede kaalutud keskmine, seega võib Δ erineda kahe mediaani vahest (nt mõlemad mediaanid 0, kuid plokkide sees on erinevus).",
+        "",
+    ]
     for code, name in econame.items():
         d = e.filter(
             (pl.col("unit_code") == code)
             & (pl.col("pair") == "vilets→hea")
-            & pl.col("oluline_m")
-            & pl.col("rel_m").is_not_null()
-            & ~pl.col("layer_id").is_in(mixing_ids)
+            & pl.col("oluline_m_med")
+            & pl.col("rel_m_med").is_not_null()
+            & pl.col("rel_m_med").is_not_nan()
         )
         if d.is_empty():
             continue
-        top = d.sort("rel_m", descending=True)
+        top = d.sort("rel_m_med", descending=True)
         sel = pl.concat([top.head(4), top.tail(4)]).unique("layer_id", maintain_order=True)
         rows = [
             [
                 nm[r["layer_id"]],
                 un[r["layer_id"]] or "–",
-                _fmt(r["mean_a"]),
-                _fmt(r["mean_b"]),
-                _fmt(r["delta_m"]),
-                _pct(r["rel_m"]),
-                f"{_fmt(r['ci_m_lo'])} … {_fmt(r['ci_m_hi'])}",
-                "uuriv segumudel" if method.get(r["layer_id"], "").startswith("segumudel") else "",
+                _fmt(r["median_a"]),
+                _fmt(r["median_b"]),
+                _fmt(r["delta_m_med"]),
+                _pct(r["rel_m_med"]),
+                f"{_fmt(r['ci_m_med_lo'])} … {_fmt(r['ci_m_med_hi'])}",
+                "madalam lahutusvõime" if r["layer_id"] in lowres else "",
             ]
             for r in sel.iter_rows(named=True)
         ]
@@ -221,17 +224,23 @@ def write_results(results: Path, out_md: Path) -> None:
             f"### {name}",
             "",
             _md_table(
-                rows, ["Teenus", "Ühik", "Keskm. vilets", "Keskm. hea", "Δ", "Δ %", "95 % CI (Δ)", "Märkus"]
+                rows, ["Teenus", "Ühik", "Mediaan vilets", "Mediaan hea", "Δ", "Δ %", "95 % CI (Δ)", "Märkus"]
             ),
             "",
         ]
 
-    # 3b. uuriv segumudel
-    mix = e.filter(pl.col("layer_id").is_in(mixing_ids) & (pl.col("pair") == "vilets→hea"))
+    # 3b. segumudel (võrdluseks madalama lahutusvõimega kihtidele)
+    segf = results / "paarid_segumudel.parquet"
+    seg = pl.read_parquet(segf) if segf.exists() else pl.DataFrame()
+    mix = (
+        seg.filter((pl.col("unit_level") == "okosusteem") & (pl.col("pair") == "vilets→hea"))
+        if not seg.is_empty()
+        else seg
+    )
     L += [
-        "### Uuriv segumudel (930 m rastrid ja 1 km vektorruudud)",
+        "### Võrdluseks: segumudel (930 m rastrid ja 1 km vektorruudud)",
         "",
-        "Need kihid on jämedamad kui seisundiüksus; hinnang tuleneb klasside pindalaosade lineaarsest segumudelist (metoodika § 7) ja on **uuriv**. Näidatud on kõik ökosüsteemid (vilets → hea), sõltumata olulisusest.",
+        "Need kihid on madalama lahutusvõimega kui seisundiüksus. Põhihinnang tuleb 10 m lahutusvõimele viidud kihist (ülal); segumudel (klasside pindalaosade lineaarne mudel, keskmisel põhinev, **uuriv**) on võrdluseks. Näidatud on kõik ökosüsteemid (vilets → hea), sõltumata olulisusest.",
         "",
     ]
     rows = [
@@ -260,17 +269,19 @@ def write_results(results: Path, out_md: Path) -> None:
     both = p.filter(
         pl.col("enough_m")
         & pl.col("enough_u")
-        & pl.col("delta_m").is_not_null()
-        & pl.col("delta_u").is_not_null()
+        & pl.col("delta_m_med").is_not_null()
+        & pl.col("delta_u_med").is_not_null()
     )
     opp = both.filter(
-        pl.col("oluline_m") & pl.col("oluline_u") & (pl.col("delta_m").sign() != pl.col("delta_u").sign())
+        pl.col("oluline_m_med")
+        & pl.col("oluline_u_med")
+        & (pl.col("delta_m_med").sign() != pl.col("delta_u_med").sign())
     )
     L += [
         "## 4. Paaritatud ja paaritamata hinnang",
         "",
-        f"* Võrreldavaid hinnanguid: {both.height}; sama märgiga: {both.filter(pl.col('delta_m').sign() == pl.col('delta_u').sign()).height} "
-        f"({both.filter(pl.col('delta_m').sign() == pl.col('delta_u').sign()).height / max(both.height, 1) * 100:.0f} %).",
+        f"* Võrreldavaid hinnanguid: {both.height}; sama märgiga: {both.filter(pl.col('delta_m_med').sign() == pl.col('delta_u_med').sign()).height} "
+        f"({both.filter(pl.col('delta_m_med').sign() == pl.col('delta_u_med').sign()).height / max(both.height, 1) * 100:.0f} %).",
         f"* Mõlemal hinnangul olulised, kuid **vastupidise märgiga**: {opp.height} (nende puhul muudab asukoha/koosseisu kontroll järelduse suunda).",
         "",
     ]
@@ -282,8 +293,8 @@ def write_results(results: Path, out_md: Path) -> None:
                 if r["unit_level"] == "okosusteem"
                 else f"alam {r['unit_code']}",
                 r["pair"].replace("→", " → "),
-                _fmt(r["delta_m"]),
-                _fmt(r["delta_u"]),
+                _fmt(r["delta_m_med"]),
+                _fmt(r["delta_u_med"]),
             ]
             for r in opp.sort("layer_id").head(25).iter_rows(named=True)
         ]

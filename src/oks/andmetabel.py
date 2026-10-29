@@ -137,8 +137,10 @@ def _wide(
         for m in range(k, j + 1):
             lay = layers[m]
             roll = {"bio": "biofüüsikaline", "raha": "rahaline", "lisa": "lisakiht"}[lay["roll"]]
-            flags = (" ‡ uuriv" if lay["uuriv"] else "") + (
-                " † definitsiooniline" if lay["definitsiooniline"] else ""
+            flags = (
+                (" ‡ madalam lahutusvõime" if lay["madal_lahutus"] else "")
+                + (" § erandkiht" if lay["nodata_valja"] else "")
+                + (" † definitsiooniline" if lay["definitsiooniline"] else "")
             )
             ws.write(1, c + m, f"{lay['nimi']} [{roll}]{flags}", f["h2"])
             ws.write(2, c + m, lay["uhik"] or "ühik dokumenteerimata", f["u"])
@@ -162,23 +164,21 @@ def _wide(
             col = first + m
             if cell is None:
                 continue
-            mean, _sd, kate, esineb, st = cell
+            med, mean, kate, _esineb, st = cell[:5]
             status = data["staatused"][st]
             if status == kaasnev.STATUS_NONE:
                 ws.write(r, col, "ei paku", f["none"])
-            elif status == kaasnev.STATUS_MISSING or mean is None:
+            elif status == kaasnev.STATUS_MISSING or med is None:
                 ws.write(r, col, "–", f["none"])
-            elif status == kaasnev.STATUS_MIXED:
-                ws.write_number(r, col, mean, f["mix"])
             elif status == kaasnev.STATUS_PARTIAL:
-                ws.write_number(r, col, mean, f["part"])
+                ws.write_number(r, col, med, f["part"])
                 ws.write_comment(
                     r,
                     col,
-                    f"Osaline kate: kehtivaid pikslitest {kate * 100:.0f} %; keskmine kehtib katvale osale.",
+                    f"Osaline kate: kehtivaid pikslitest {kate * 100:.0f} %; mediaan kehtib katvale osale. Keskmine {mean}.",
                 )
             else:
-                ws.write_number(r, col, mean, f["num"])
+                ws.write_number(r, col, med, f["num"])
     ws.set_column(0, 0, 14)
     ws.set_column(1, 1, 36 if kind == "tuubid" else 22)
     ws.set_column(2, 2, 12 if kind == "tuubid" else 14)
@@ -231,11 +231,11 @@ def write(
         ),
         (
             "Päritolu",
-            "Kõik väärtused on ELME/ELME2 kaardikihtide (modelleeritud kihid, mitte mõõtmised) pikslitaseme keskmised ökosüsteemitüübi ja seisundiklassi kaupa. Seisund: ELME2 baaskaart (2022, 5 m; originaal, mitte metsaseisundi parandatud versioon).",
+            "Kõik väärtused on ELME/ELME2 kaardikihtide (modelleeritud kihid, mitte mõõtmised) pikslitaseme mediaanid ökosüsteemitüübi ja seisundiklassi kaupa (metoodika v2). Keskmised on lehtedel „Pikk tabel“. Seisund: ELME2 baaskaart (2022, 5 m; originaal, mitte metsaseisundi parandatud versioon).",
         ),
         (
-            "Keskmise määratlus",
-            "Keskväärtus on pikslite aritmeetiline keskmine KOGU klassi kehtiva pindala kohta, nullid kaasa arvatud (lähtekasu loogikakontroll). Kihtides, mille NoData oli 0 (nt seente hind, õhusaaste puhverdamine, niidu/soo biomass), on 0 loetud kehtivaks nulliks; ohusaaste puhverdamisel ka 255 (tabeli märkus).",
+            "Mediaani määratlus",
+            "Väärtus on täpne pikslimediaan KOGU klassi pindala kohta, nullid kaasa arvatud: pooled pikslid on sellest väiksemad, pooled suuremad. Iga piksel on üks vaatlus. Kihi NoData loetakse nulliks, kui all on baaskaardi ökosüsteem; erandid on mustikate-pohlade, pohlade ja kasemahla kihid, kus NoData tähendab puuduvat hinnangut ja jäetakse välja. Põllukihtides on põldudest väljas olev ala 0. Keskmine (pindalaga summeerimiseks) on lehtedel „Pikk tabel“.",
         ),
         (
             "„ei paku“",
@@ -247,11 +247,11 @@ def write(
         ),
         (
             "Kaldkiri ja kollane",
-            f"Osaline kate: kehtivaid piksleid alla {params['kate_taielik'] * 100:.0f} %; keskmine kehtib katvale osale.",
+            f"Osaline kate: kehtivaid piksleid alla {params['kate_taielik'] * 100:.0f} %; väärtus kehtib katvale osale.",
         ),
         (
-            "Lilla ‡",
-            "UURIV: jämeda ruudustiku (930 m, 1 km) kihtidel on seisundi ja teenuse seos hinnatud segumudeliga ainult ökosüsteemi tasemel; mitte tüüpide kaupa.",
+            "‡ madalam lahutusvõime",
+            "Kihi lahutusvõime on 930 m või 1 km. Arvutuseks on see viidud baaskaardi 10 m lahutusvõimele; seisundite erinevus tuleb ainult algsete ruutude vahelistest erinevustest.",
         ),
         (
             "† definitsiooniline",
@@ -259,7 +259,7 @@ def write(
         ),
         (
             "Pindala",
-            "Baaskaardi pindala (5 m piksel = 25 m²) hektarites; kaalutud keskmised suurte ökosüsteemide kohta on kaalutud kehtiva pindalaga. Mets on jagatud ka kuivadeks (salu-, palu-, laane-, loo-, nõmmemets) ja märjaks metsaks (soovikumets, sambla-, rohu-, kõdusoomets, rabastuv mets).",
+            "Baaskaardi pindala (5 m piksel = 25 m²) hektarites; suurte ökosüsteemide mediaan on arvutatud kõigi nende pikslite pealt korraga. Mets on jagatud ka kuivadeks (salu-, palu-, laane-, loo-, nõmmemets) ja märjaks metsaks (soovikumets, sambla-, rohu-, kõdusoomets, rabastuv mets).",
         ),
         (
             "Seisundid",
@@ -296,6 +296,8 @@ def write(
             "n_total",
             "kate",
             "esineb_osa",
+            "median",
+            "median_nz",
             "mean",
             "sd",
             "staatus",
@@ -315,6 +317,8 @@ def write(
             "n_total",
             "kate",
             "esineb_osa",
+            "median",
+            "median_nz",
             "mean",
             "sd",
             "staatus",
@@ -334,7 +338,8 @@ def write(
         "Märkus",
         "Tabeli märkus",
         "Definitsiooniline",
-        "Uuriv",
+        "Madalam lahutusvõime",
+        "Erandkiht (NoData välja)",
         "Lisakiht",
     ]
     for c, t in enumerate(heads):
@@ -354,7 +359,8 @@ def write(
                 x["markus"],
                 x["tabeli_markus"],
                 "jah" if x["definitsiooniline"] else "",
-                "jah" if x["uuriv"] else "",
+                "jah" if x["madal_lahutus"] else "",
+                "jah" if x["nodata_valja"] else "",
                 "jah" if x["lisakiht"] else "",
             ]
         ):

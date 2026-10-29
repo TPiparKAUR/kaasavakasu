@@ -1,8 +1,8 @@
 {
   "V8 tulemustabel": {
     "ridu veebis": 116,
-    "arvulisi lahtreid": 2746,
-    "tekstilisi (ei paku / –)": 850,
+    "arvulisi lahtreid": 3110,
+    "tekstilisi (ei paku / –)": 834,
     "lahknevusi": 0,
     "näited": []
   },
@@ -10,14 +10,14 @@
     "üksus": "Salumets",
     "seisundid": "vilets→hea",
     "pindala ha": 1000.0,
-    "kontrollitud ridu": 10,
+    "kontrollitud ridu": 9,
     "lahknevusi": 0,
     "näited": []
   },
   "JS vead brauseris": [],
   "V10 Excel (Tüübid × seisund)": {
     "ridu": 152,
-    "arvulisi lahtreid": 3599,
+    "arvulisi lahtreid": 4073,
     "lahknevusi": 0,
     "lehed": [
       "Loe mind",

@@ -80,8 +80,8 @@ UNITS: dict[str, tuple[str, str]] = {
         "RINGLUSE HOIATUS: põllukultuuride seisundiklass A-D langeb baaskaardil kokku selle kihi väärtusklassiga A-D (kontrollitud: keskmine väärtusklass klassides A/B/C/D = 1,0006 / 2,0000 / 3,0000 / 4,0000, SD ~ 0,01), mis on tuletatud samast reaalboniteedist; seos seisundi ja boniteedi vahel on seetõttu osaliselt definitsiooniline. Tabeli märkus: 'Eraldi käsitlus'",
     ),
     "lamm_grd1000_am_drained_2022": (
-        "EUR (väli lammide_taastamise_kulu)",
-        "1 km ruudustik, ainult lammiruudud (am_osa > 0); väärtus väheneb kuivendatud pindalaga, seos seisundiga kaudne. Uuriv segumudel",
+        "EUR/ha/a (väli lammide_taastamise_kulu)",
+        "1 km ruudustik, väärtus ainult lammiruutudes (am_osa > 0); väärtus väheneb kuivendatud pindalaga, seos seisundiga kaudne",
     ),
 }
 
@@ -97,6 +97,19 @@ EXTRA_INVALID: dict[str, tuple[float, ...]] = {}
 ZERO_EXTRA: dict[str, tuple[float, ...]] = {
     "ohusaaste_puhverdusvoime_2022_5m": (255.0,),
 }
+
+#: Kihid, mille deklareeritud NoData jäetakse valimist välja. Kõigis teistes rastrites loetakse NoData
+#: (ka 255, 65535, -1, -9999, float32 miinimum) kehtivaks nulliks, kui all on baaskaardi kood (metoodika v2).
+#: Kasemahla kihtides tähendab NoData puuduvat hinnangut (soo- ja kõdusoometsades andmed puuduvad), mitte nulli.
+NODATA_EXCLUDED: frozenset[str] = frozenset(
+    {
+        "mustikad_pohlad_saagikus_2020_10m",
+        "mustikad_pohlad_hind_2022_10m",
+        "pohlad_saagikus_2020_10m",
+        "kasemahl_saagikus_2020_10m",
+        "kasemahl_hind_2022_10m",
+    }
+)
 
 #: Lähtekasu (``docs/lahteulesanne.md``) nõuab hindu ja ühte sidusust, mis ei ole tabelis ``eval = TRUE``:
 #: mulla süsiniku varu ja puitse biomassi süsiniku rahaline väärtus ning loodusmaastiku sidusus 1 km raadiuses.
@@ -256,7 +269,9 @@ def evaluated(cat: pl.DataFrame) -> pl.DataFrame:
 
 
 def zero_values(layer_id: str, nodata: float | None) -> tuple[float, ...]:
-    """Väärtused, mis loetakse kehtivaks nulliks: deklareeritud NoData ``0`` ja ``ZERO_EXTRA``.
+    """Väärtused, mis loetakse kehtivaks nulliks: deklareeritud NoData ja ``ZERO_EXTRA``.
+
+    Erand: ``NODATA_EXCLUDED`` kihtides jääb NoData valimist välja (nulliks loetakse ainult NoData ``0``).
 
     Parameters
     ----------
@@ -268,10 +283,10 @@ def zero_values(layer_id: str, nodata: float | None) -> tuple[float, ...]:
     Returns
     -------
     tuple[float, ...]
-        Tühi, kui NoData ei ole 0 ja lisaväärtusi pole.
+        Tühi, kui NoData puudub (või on erandkihis nullist erinev) ja lisaväärtusi pole.
     """
     vals: list[float] = []
-    if nodata is not None and float(nodata) == 0.0:
-        vals.append(0.0)
+    if nodata is not None and (layer_id not in NODATA_EXCLUDED or float(nodata) == 0.0):
+        vals.append(float(nodata))
     vals.extend(ZERO_EXTRA.get(layer_id, ()))
     return tuple(dict.fromkeys(vals))

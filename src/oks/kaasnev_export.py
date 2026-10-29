@@ -28,8 +28,8 @@ STATUSES: list[str] = [
     kaasnev.STATUS_MIXED,
 ]
 
-#: Kihid, mille seos seisundiga on hinnatud ainult segumudeliga ökosüsteemi tasemel (uuriv).
-MIXED_LAYERS: frozenset[str] = frozenset(
+#: Madalama lahutusvõimega kihid (930 m, 1 km), mis on arvutuseks viidud 10 m lahutusvõimele; segumudel on võrdluseks.
+LOW_RES_LAYERS: frozenset[str] = frozenset(
     {
         "vee_puhastamise_potentsiaal_p_kg_ha_a_2022_930m",
         "vee_puhastamise_potentsiaal_p_eur_ha_2022_930m",
@@ -73,7 +73,8 @@ def layer_info(cat: pl.DataFrame) -> list[dict[str, Any]]:
                     "markus": r["markus"],
                     "tabeli_markus": r["comments"],
                     "definitsiooniline": lid in catalog.DEFINITIONAL,
-                    "uuriv": lid in MIXED_LAYERS,
+                    "madal_lahutus": lid in LOW_RES_LAYERS,
+                    "nodata_valja": lid in catalog.NODATA_EXCLUDED,
                     "lisakiht": lid in catalog.BRIEF_EXTRA,
                 }
             )
@@ -81,39 +82,26 @@ def layer_info(cat: pl.DataFrame) -> list[dict[str, Any]]:
 
 
 def _cells(df: pl.DataFrame, keys: list[str], layers: list[str]) -> dict[tuple[Any, ...], list[Any]]:
-    """Sõnastik ``võti -> [rakk kihi kohta]``; rakk = ``[mean, sd, kate, esineb_osa, staatuse indeks]``."""
+    """Sõnastik ``võti -> [rakk kihi kohta]``.
+
+    Rakk = ``[mediaan, keskmine, kate, esineb_osa, staatuse indeks, mediaan nullist erinevatel pikslitel]``
+    (metoodika v2: peamine väärtus on mediaan; keskmine on stsenaariumi pindalaarvutuseks).
+    """
     by_layer: dict[str, dict[tuple[Any, ...], list[Any]]] = {}
     sub = df.filter(pl.col("layer_id").is_not_null())
     for r in sub.iter_rows(named=True):
         key = tuple(r[k] for k in keys)
         cell = [
+            _r(r.get("median")),
             _r(r["mean"]),
-            _r(r["sd"]),
             _r(r["kate"], 4),
             _r(r["esineb_osa"], 4),
             STATUSES.index(r["staatus"]),
+            _r(r.get("median_nz")),
         ]
         by_layer.setdefault(r["layer_id"], {})[key] = cell
     keys_all = {k for d in by_layer.values() for k in d}
     return {k: [by_layer.get(lid, {}).get(k) for lid in layers] for k in keys_all}
-
-
-def _mixed_cells(lahtrid: pl.DataFrame, layers: list[str]) -> dict[tuple[int, str], dict[str, list[Any]]]:
-    """Segumudeli kihtide hinnangud ökosüsteemi tasemel: ``(eco_kood, seisund) -> {kiht: rakk}``."""
-    out: dict[tuple[int, str], dict[str, list[Any]]] = {}
-    sub = lahtrid.filter(
-        pl.col("layer_id").is_in([x for x in layers if x in MIXED_LAYERS])
-        & (pl.col("unit_level") == "okosusteem")
-    )
-    for r in sub.iter_rows(named=True):
-        out.setdefault((int(r["unit_code"]), r["state"]), {})[r["layer_id"]] = [
-            _r(r["mean"]),
-            None,
-            None,
-            None,
-            STATUSES.index(kaasnev.STATUS_MIXED),
-        ]
-    return out
 
 
 def build_json(results: Path, out: Path) -> dict[str, Any]:
@@ -122,7 +110,7 @@ def build_json(results: Path, out: Path) -> dict[str, Any]:
     Parameters
     ----------
     results
-        ``data/tulemused`` (``kaasnev_*.parquet``, ``paarid.parquet``, ``lahtrid.parquet``).
+        ``data/tulemused`` (``kaasnev_*.parquet``, ``paarid.parquet``).
     out
         Väljundkaust (``site/data``).
 
@@ -136,11 +124,11 @@ def build_json(results: Path, out: Path) -> dict[str, Any]:
         config.ROOT / "alusmaterjalid/metaandmed/layer_definition_checked_vrs2.csv",
         config.ROOT / "data/arhiiv_failid.csv",
     )
-    info = layer_info(cat)
-    layers = [x["id"] for x in info]
     ts = pl.read_parquet(results / "kaasnev_tuup_seisund.parquet")
     big = pl.read_parquet(results / "kaasnev_suured.parquet")
-    lahtrid = pl.read_parquet(results / "lahtrid.parquet")
+    present = set(ts["layer_id"].drop_nulls().to_list())
+    info = [x for x in layer_info(cat) if x["id"] in present]
+    layers = [x["id"] for x in info]
 
     keys_t = ["okosusteem_kood", "alam_kood", "tuup", "uld", "seisund_nimi"]
     cells_t = _cells(ts, keys_t, layers)
@@ -153,7 +141,6 @@ def build_json(results: Path, out: Path) -> dict[str, Any]:
 
     keys_b = ["okosusteem_kood", "seisund_nimi"]
     cells_b = _cells(big, keys_b, layers)
-    mixed = _mixed_cells(lahtrid, layers)
     area_b = {tuple(r[k] for k in keys_b): r["pindala_ha"] for r in big.unique(keys_b).iter_rows(named=True)}
     rows_b = []
     for key in sorted(
@@ -161,10 +148,7 @@ def build_json(results: Path, out: Path) -> dict[str, Any]:
         key=lambda k: (kaasnev.DISPLAY_ORDER.get(k[0], 99), list(big["seisund_nimi"].unique()).index(k[1])),
     ):
         ok, sn = key
-        cs = list(cells_b.get(key, [None] * len(layers)))
-        for lid, cell in mixed.get((ok, sn), {}).items():
-            cs[layers.index(lid)] = cell
-        rows_b.append([ok, sn, _r(area_b[key], 6), cs])
+        rows_b.append([ok, sn, _r(area_b[key], 6), cells_b.get(key, [None] * len(layers))])
     order = {
         s: i
         for i, s in enumerate([*kaasnev.STATE_ORDER, "kokku (hea+keskmine+vilets)", "kokku (kõik seisundid)"])
@@ -249,14 +233,15 @@ def evidence(results: Path) -> pl.DataFrame:
         lid = r["layer_id"]
         if lid not in indikaatorid.LAYER_TO_INDICATOR:
             continue
-        d, rel = r.get("delta_m"), r.get("rel_m")
+        # metoodika v2: hinnang mediaanide põhjal (paaritatud; kui stratumeid ei piisa, paaritamata)
+        d, rel = r.get("delta_m_med"), r.get("rel_m_med")
         if not r.get("enough_m") or d is None:
-            d, rel, est = r.get("delta_u"), r.get("rel_u"), "paaritamata"
-            sig = bool(r.get("oluline_u")) if r.get("enough_u") else False
+            d, rel, est = r.get("delta_u_med"), r.get("rel_u_med"), "paaritamata"
+            sig = bool(r.get("oluline_u_med")) if r.get("enough_u") else False
             ok = bool(r.get("enough_u")) and d is not None
         else:
             est = "paaritatud"
-            sig = bool(r.get("oluline_m"))
+            sig = bool(r.get("oluline_m_med"))
             ok = True
         direction = "ebaselge"
         if ok and sig and d is not None and d != 0:
@@ -274,7 +259,7 @@ def evidence(results: Path) -> pl.DataFrame:
                 "delta": _r(d) if ok else None,
                 "rel": _r(rel, 4) if ok else None,
                 "oluline": sig and ok,
-                "q": _r(r.get("q_m") if est == "paaritatud" else r.get("q_u")) if ok else None,
+                "q": _r(r.get("q_m_med") if est == "paaritatud" else r.get("q_u_med")) if ok else None,
                 "hyve_suund": direction,
                 "tugevus": indikaatorid.strength(rel) if ok and sig else "",
                 "paare": int(r["n_strata"]) if est == "paaritatud" and r.get("n_strata") else None,

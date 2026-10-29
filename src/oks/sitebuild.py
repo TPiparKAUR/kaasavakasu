@@ -11,8 +11,20 @@ from pathlib import Path
 from . import andmetabel, config, export, kaasnev_export
 
 #: ``site_src/sections`` failid ``app.js`` märgendi ``/*@@SECTIONS@@*/`` asemele (samas sulundis).
-SECTION_FILES = ("common.js", "home.js", "results.js", "scenario.js", "quality.js", "brief.js")
-DATA_FILES = ("meta", "paarid", "lahtrid", "klassid", "jaotused", "kaasnev", "tendus", "nouded")
+SECTION_FILES = ("common.js", "home.js", "results.js", "scenario.js", "quality.js", "brief.js", "compare.js")
+DATA_FILES = (
+    "meta",
+    "paarid",
+    "lahtrid",
+    "klassid",
+    "jaotused",
+    "kaasnev",
+    "tendus",
+    "nouded",
+    "algklassid",
+    "segumudel",
+    "vordlus",
+)
 XLSX_NAME = "andmetabel_kaasneva_kasu.xlsx"
 
 

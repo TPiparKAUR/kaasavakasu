@@ -30,7 +30,7 @@
       const det = h('details', { class: 'qitem' }, wrap); if (S.qs.open.has(ind.key)) det.open = true;
       det.ontoggle = () => { det.open ? S.qs.open.add(ind.key) : S.qs.open.delete(ind.key); };
       const sm = h('summary', { class: 'qrow' }, det), nm = h('div', { class: 'qn' }, sm);
-      h('b', {}, nm, ind.nimi); h('small', {}, nm, `${ind.sektsioon} · ${ind.tuup === 'varu' ? 'varu' : ind.tuup === 'voog' ? 'aastane voog' : ind.tuup}${ind.suund === 'vaiksem_parem' ? ' · väiksem väärtus on parem' : ''}${ind.kihid.some((id) => Kd.kihid.find((l) => l.id === id)?.uuriv) ? ' · uuriv (segumudel)' : ''}`);
+      h('b', {}, nm, ind.nimi); h('small', {}, nm, `${ind.sektsioon} · ${ind.tuup === 'varu' ? 'varu' : ind.tuup === 'voog' ? 'aastane voog' : ind.tuup}${ind.suund === 'vaiksem_parem' ? ' · väiksem väärtus on parem' : ''}${ind.kihid.some((id) => Kd.kihid.find((l) => l.id === id)?.madal_lahutus) ? ' · madalam lahutusvõime (930 m / 1 km)' : ''}`);
       for (const ok of [3, 2, 1, 4]) {
         const td = h('div', { class: 'qe' }, sm), q = qEvidence(ind, ok);
         if (!q) { h('span', { class: 'qb none', title: 'tõendust ei ole (teenus ei esine või ei piisa andmeid)' }, td, '–'); continue; }

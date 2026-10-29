@@ -21,7 +21,7 @@ from pathlib import Path
 
 import polars as pl
 
-from . import catalog, config
+from . import catalog, config, median
 
 log = logging.getLogger(__name__)
 
@@ -171,25 +171,8 @@ def big_classes(stats: pl.DataFrame, classes: pl.DataFrame) -> pl.DataFrame:
     Mets on lisaks jagatud kuivadeks (salu-, palu-, laane-, loo-, nõmmemets) ja märjaks (soovikumets, sambla-, rohu-,
     kõdusoomets, rabastuv mets) metsaks; „Muu (metsa)kooslus“ jääb ainult metsa kogusse.
     """
-    base = classes.filter(pl.col("okosusteem_kood").is_in([1, 2, 3, 4, 5]))
-    forest = base.filter(pl.col("okosusteem_kood") == 3)
-    split = [
-        forest.filter(pl.col("alam_kood").is_in(list(codes))).with_columns(
-            pl.lit(code).cast(forest.schema["okosusteem_kood"]).alias("okosusteem_kood"),
-            pl.lit(name).alias("okosusteem"),
-        )
-        for code, (name, codes) in FOREST_SPLIT.items()
-    ]
-    base = pl.concat([base, *split])
     keys = ["okosusteem_kood", "okosusteem", "seisund_nimi"]
-    out = [_big(stats, base, keys)]
-    for label, ulds in (
-        ("kokku (hea+keskmine+vilets)", [1, 2, 3]),
-        ("kokku (kõik seisundid)", [1, 2, 3, 4, 5]),
-    ):
-        sub = base.filter(pl.col("uld").is_in(ulds)).with_columns(pl.lit(label).alias("seisund_nimi"))
-        out.append(_big(stats, sub, keys))
-    res = pl.concat(out)
+    res = pl.concat([_big(stats, sub, keys) for sub in _big_groups(classes)])
     return (
         res.with_columns(
             pl.col("seisund_nimi")
@@ -215,6 +198,41 @@ def big_classes(stats: pl.DataFrame, classes: pl.DataFrame) -> pl.DataFrame:
     )
 
 
+def _big_groups(classes: pl.DataFrame) -> list[pl.DataFrame]:
+    """Suurte ökosüsteemide klassirühmad: seisundi kaupa ja kaks „kokku“ rida (kuivad/märjad metsad eraldi)."""
+    base = classes.filter(pl.col("okosusteem_kood").is_in([1, 2, 3, 4, 5]))
+    forest = base.filter(pl.col("okosusteem_kood") == 3)
+    split = [
+        forest.filter(pl.col("alam_kood").is_in(list(codes))).with_columns(
+            pl.lit(code).cast(forest.schema["okosusteem_kood"]).alias("okosusteem_kood"),
+            pl.lit(name).alias("okosusteem"),
+        )
+        for code, (name, codes) in FOREST_SPLIT.items()
+    ]
+    base = pl.concat([base, *split])
+    out = [base]
+    for label, ulds in (
+        ("kokku (hea+keskmine+vilets)", [1, 2, 3]),
+        ("kokku (kõik seisundid)", [1, 2, 3, 4, 5]),
+    ):
+        out.append(base.filter(pl.col("uld").is_in(ulds)).with_columns(pl.lit(label).alias("seisund_nimi")))
+    return out
+
+
+def median_table(vt: median.ValueTable, group: pl.DataFrame, keys: list[str]) -> pl.DataFrame:
+    """Täpne pikslimediaan iga rühma klasside ühendis (kõik pikslid ja nullist erinevad; metoodika v2).
+
+    Valim on sama mis ``summarise`` keskväärtusel: kõik kehtivad pikslid, nullid kaasa arvatud.
+    """
+    rows = []
+    for r in group.group_by(keys).agg(pl.col("kood")).iter_rows(named=True):
+        ks = [int(k) for k in r["kood"]]
+        _n, m = vt.median(ks)
+        _nnz, mnz = vt.median(ks, nonzero=True)
+        rows.append({**{k: r[k] for k in keys}, "median": m, "median_nz": mnz})
+    return pl.DataFrame(rows, schema_overrides={k: group.schema[k] for k in keys})
+
+
 def _big(stats: pl.DataFrame, classes: pl.DataFrame, keys: list[str]) -> pl.DataFrame:
     area = classes.group_by(keys).agg(pl.col("pindala_ha").sum())
     return area.join(summarise(stats, classes, keys), on=keys, how="left")
@@ -234,6 +252,35 @@ def build(layer_ids: Sequence[str], out_dir: Path | None = None) -> dict[str, pl
     classes = class_table()
     stats = load_class_stats(layer_ids)
     res = {"tuup_seisund": type_state(stats, classes), "suured": big_classes(stats, classes)}
+    res = add_medians(res, classes, layer_ids)
     for k, v in res.items():
         v.write_parquet(out_dir / f"kaasnev_{k}.parquet")
     return res
+
+
+def add_medians(
+    res: dict[str, pl.DataFrame], classes: pl.DataFrame, layer_ids: Sequence[str], blocks: Path | None = None
+) -> dict[str, pl.DataFrame]:
+    """Lisa tulemustabelitele täpsed mediaanid (``median``, ``median_nz``) kihi sagedustabelist.
+
+    Sagedustabel loetakse kihi kaupa üks kord (suurte kihtide mälu); kihid, millel see puudub, jäävad tühjaks.
+    """
+    base = blocks or config.BLOCKS
+    ts_keys = ["okosusteem_kood", "okosusteem", "alam_kood", "tuup", "uld", "seisund_nimi"]
+    big_keys = ["okosusteem_kood", "okosusteem", "seisund_nimi"]
+    big_groups = pl.concat(_big_groups(classes))
+    parts_t, parts_b = [], []
+    for lid in layer_ids:
+        vdir = base / f"{lid}__val"
+        if not vdir.is_dir():
+            log.warning("sagedustabel puudub: %s", lid)
+            continue
+        vt = median.ValueTable.load(vdir)
+        parts_t.append(median_table(vt, classes, ts_keys).with_columns(pl.lit(lid).alias("layer_id")))
+        parts_b.append(median_table(vt, big_groups, big_keys).with_columns(pl.lit(lid).alias("layer_id")))
+        del vt
+    out = dict(res)
+    for name, parts, keys in (("tuup_seisund", parts_t, ts_keys), ("suured", parts_b, big_keys)):
+        if parts:
+            out[name] = res[name].join(pl.concat(parts), on=[*keys, "layer_id"], how="left")
+    return out

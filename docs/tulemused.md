@@ -1,100 +1,102 @@
 # Tulemuste kokkuvõte
 
-Genereeritud `oks.report.write_results`-ga failist `data/tulemused/paarid.parquet`. Meetod: [metoodika.md](metoodika.md).
+Genereeritud `oks.report.write_results`-ga failist `data/tulemused/paarid.parquet`. Meetod: [metoodika.md](metoodika.md). Metoodika v2: hinnangud põhinevad täpsetel pikslimediaanidel (otsused: [metoodika_v2_otsused.md](metoodika_v2_otsused.md)).
 
 ## 1. Ulatus
 
-* 34 teenust, 43 ökosüsteemi/alamökosüsteemi üksust (taseme kaupa), 3697 seisundipaari hinnangut.
+* 34 teenust, 43 ökosüsteemi/alamökosüsteemi üksust (taseme kaupa), 4180 seisundipaari hinnangut.
 * Parameetrid: klaster 10×10 km, 4000 bootstrapi, min 1,0 ha, FDR α = 0,05.
 
 | Tase | Hinnanguid | Paaritatud: piisavalt andmeid | …neist olulisi (q<0,05) | Paaritamata: piisavalt andmeid | …neist olulisi | Oluline mõlemal ja sama märk |
 |---|---|---|---|---|---|---|
-| Ökosüsteem | 399 | 364 | 219 | 335 | 277 | 171 |
-| Alamökosüsteem | 3298 | 2508 | 1117 | 2708 | 1496 | 1016 |
+| Ökosüsteem | 408 | 391 | 184 | 398 | 168 | 98 |
+| Alamökosüsteem | 3772 | 3043 | 991 | 3278 | 844 | 617 |
 
 ## 2. Ökosüsteemide tase: mitu teenust muutub seisundi paranedes
 
-Paaritatud hinnang, ainult hinnangud, kus on piisavalt andmeid. „Kasvab” = Δ > 0 ja q < 0,05; „väheneb” = Δ < 0 ja q < 0,05.
+Paaritatud hinnang mediaanide põhjal, ainult hinnangud, kus on piisavalt andmeid. „Kasvab” = Δ > 0 ja q < 0,05; „väheneb” = Δ < 0 ja q < 0,05.
 
 | Ökosüsteem | Seisundipaar | Teenuseid | Kasvab | Väheneb | Ei ole oluline |
 |---|---|---|---|---|---|
-| Rohumaad | vilets → keskmine | 31 | 7 | 6 | 18 |
-| Rohumaad | keskmine → hea | 31 | 8 | 6 | 17 |
-| Rohumaad | vilets → hea | 31 | 8 | 13 | 10 |
-| Sood | vilets → keskmine | 29 | 10 | 9 | 10 |
-| Sood | keskmine → hea | 28 | 5 | 5 | 18 |
-| Sood | vilets → hea | 28 | 11 | 9 | 8 |
-| Metsad | vilets → keskmine | 32 | 20 | 9 | 3 |
-| Metsad | keskmine → hea | 32 | 20 | 4 | 8 |
-| Metsad | vilets → hea | 32 | 21 | 6 | 5 |
-| Põllumaad | vilets → keskmine | 30 | 13 | 5 | 12 |
-| Põllumaad | keskmine → hea | 30 | 9 | 2 | 19 |
-| Põllumaad | vilets → hea | 30 | 8 | 5 | 17 |
+| Rohumaad | vilets → keskmine | 34 | 9 | 6 | 19 |
+| Rohumaad | keskmine → hea | 34 | 6 | 7 | 21 |
+| Rohumaad | vilets → hea | 34 | 7 | 7 | 20 |
+| Sood | vilets → keskmine | 32 | 9 | 7 | 16 |
+| Sood | keskmine → hea | 31 | 3 | 7 | 21 |
+| Sood | vilets → hea | 31 | 8 | 9 | 14 |
+| Metsad | vilets → keskmine | 34 | 19 | 6 | 9 |
+| Metsad | keskmine → hea | 34 | 20 | 0 | 14 |
+| Metsad | vilets → hea | 34 | 21 | 1 | 12 |
+| Põllumaad | vilets → keskmine | 31 | 12 | 4 | 15 |
+| Põllumaad | keskmine → hea | 31 | 7 | 0 | 24 |
+| Põllumaad | vilets → hea | 31 | 8 | 1 | 22 |
 
-## 3. Suurimad muutused (vilets → hea, paaritatud, olulised)
+## 3. Suurimad muutused (vilets → hea, paaritatud mediaanide põhjal, olulised)
+
+„Mediaan vilets/hea“ on kogu ökosüsteemi pikslite mediaan. Δ on samas 1 km plokis ja alamökosüsteemis arvutatud mediaanide vahede kaalutud keskmine, seega võib Δ erineda kahe mediaani vahest (nt mõlemad mediaanid 0, kuid plokkide sees on erinevus).
 
 ### Rohumaad
 
-| Teenus | Ühik | Keskm. vilets | Keskm. hea | Δ | Δ % | 95 % CI (Δ) | Märkus |
+| Teenus | Ühik | Mediaan vilets | Mediaan hea | Δ | Δ % | 95 % CI (Δ) | Märkus |
 |---|---|---|---|---|---|---|---|
-| Elupaikade säilitamine looduslikele liikidele | indeks 0-10 | 3,32 | 8,07 | 2,64 | +51 % | 2,56 … 2,72 |  |
-| Ökosüsteemide tugi tolmeldajatele | indeks 0-1 | 0,144 | 0,172 | 0,039 | +24 % | 0,032 … 0,047 |  |
-| Maismaaökosüsteemide summaarne virgestusväärtus | skoor | 15,4 | 26,0 | 5,06 | +24 % | 4,64 … 5,48 |  |
-| Loodusturismi hüve – looduslikkuse suhteline väärtus loodusobjektina | skoor | 48,7 | 80,4 | 13,7 | +20 % | 13,0 … 14,4 |  |
-| Fosfori ärakanne | kg/ha/a | 0,909 | 0,116 | -0,080 | -46 % | -0,148 … -0,029 |  |
-| Niidu puitsesse biomassi seotud süsiniku varu | t C/ha | 8,83 | 5,98 | -10,2 | -54 % | -11,4 … -9,11 |  |
-| Mustikate ja pohlade potentsiaalne tulu | EUR/ha/a | 2,38 | 0,709 | -1,01 | -67 % | -1,94 … -0,335 |  |
-| Mustikate ja pohlade potentsiaalne saagikus | kg/ha | 0,951 | 0,283 | -0,405 | -67 % | -0,775 … -0,134 |  |
+| Elupaikade säilitamine looduslikele liikidele | indeks 0-10 | 3,00 | 8,00 | 2,70 | +53 % | 2,61 … 2,77 |  |
+| Maismaaökosüsteemide summaarne virgestusväärtus | skoor | 14,0 | 26,0 | 5,14 | +24 % | 4,66 … 5,64 |  |
+| Ökosüsteemide tugi tolmeldajatele | indeks 0-1 | 0,153 | 0,106 | 0,037 | +23 % | 0,030 … 0,046 |  |
+| Loodusturismi hüve – looduslikkuse suhteline väärtus loodusobjektina | skoor | 47,0 | 80,0 | 13,9 | +21 % | 13,2 … 14,6 |  |
+| Söögiseentest saadav potentsiaalne tulu | EUR/ha/a | 0,000 | 0,000 | -1,98 | -32 % | -3,74 … -0,608 |  |
+| Niidu puitsesse biomassi seotud süsiniku varu | t C/ha | 0,000 | 0,000 | -8,16 | -56 % | -9,56 … -6,93 |  |
+| Mustikate ja pohlade potentsiaalne tulu | EUR/ha/a | 0,000 | 0,000 | -0,813 | -88 % | -1,96 … -0,128 |  |
+| Mustikate ja pohlade potentsiaalne saagikus | kg/ha | 0,000 | 0,000 | -0,325 | -88 % | -0,782 … -0,051 |  |
 
 ### Sood
 
-| Teenus | Ühik | Keskm. vilets | Keskm. hea | Δ | Δ % | 95 % CI (Δ) | Märkus |
+| Teenus | Ühik | Mediaan vilets | Mediaan hea | Δ | Δ % | 95 % CI (Δ) | Märkus |
 |---|---|---|---|---|---|---|---|
-| Elupaikade säilitamine looduslikele liikidele | indeks 0-10 | 3,50 | 8,73 | 2,42 | +41 % | 2,35 … 2,50 |  |
-| Maismaaökosüsteemide summaarne virgestusväärtus | skoor | 13,1 | 26,2 | 4,20 | +20 % | 3,99 … 4,42 |  |
-| Loodusturismi hüve rahaline väärtus tarbijakulude alusel | EUR/ha | 159,7 | 226,5 | 33,6 | +18 % | 32,1 … 35,2 |  |
-| Loodusturismi hüve – looduslikkuse suhteline väärtus loodusobjektina | skoor | 51,3 | 72,1 | 10,6 | +18 % | 10,3 … 10,8 |  |
-| Soo puitsesse biomassi seotud süsiniku varu | t C/ha | 4,24 | 1,77 | -1,67 | -44 % | -1,91 … -1,45 |  |
-| Orgaanilise süsiniku ärakanne | kg/ha/a | 0,223 | 0,017 | -0,019 | -51 % | -0,027 … -0,013 |  |
-| Söögiseentest saadav potentsiaalne tulu | EUR/ha/a | 18,7 | 0,363 | -32,1 | -99 % | -34,2 … -30,2 |  |
-| Söögiseente potentsiaalne saagikus | kg/ha | 4,18 | 0,081 | -7,22 | -99 % | -7,66 … -6,78 |  |
+| Elupaikade säilitamine looduslikele liikidele | indeks 0-10 | 4,00 | 9,00 | 2,43 | +41 % | 2,36 … 2,51 |  |
+| Maismaaökosüsteemide summaarne virgestusväärtus | skoor | 11,0 | 26,0 | 4,11 | +20 % | 3,88 … 4,36 |  |
+| Loodusturismi hüve rahaline väärtus tarbijakulude alusel | EUR/ha | 158,0 | 237,0 | 32,8 | +18 % | 30,8 … 35,0 |  |
+| Loodusturismi hüve – looduslikkuse suhteline väärtus loodusobjektina | skoor | 50,0 | 72,0 | 10,4 | +18 % | 10,1 … 10,8 |  |
+| Fosfori mullaerosiooniga ärakande hind | EUR/ha/a | 0,001 | 0,000 | -0,001 | -64 % | -0,001 … -0,001 |  |
+| Orgaanilise süsiniku ärakanne | kg/ha/a | 0,009 | 0,000 | -0,009 | -65 % | -0,012 … -0,007 |  |
+| Söögiseentest saadav potentsiaalne tulu | EUR/ha/a | 0,000 | 0,000 | -28,0 | -99 % | -31,6 … -24,5 |  |
+| Söögiseente potentsiaalne saagikus | kg/ha | 0,000 | 0,000 | -6,23 | -99 % | -7,03 … -5,46 |  |
 
 ### Metsad
 
-| Teenus | Ühik | Keskm. vilets | Keskm. hea | Δ | Δ % | 95 % CI (Δ) | Märkus |
+| Teenus | Ühik | Mediaan vilets | Mediaan hea | Δ | Δ % | 95 % CI (Δ) | Märkus |
 |---|---|---|---|---|---|---|---|
-| Metsa puitsesse biomassi seotud süsiniku varu rahaline väärtus (aasta keskmine ETS börsihind) | EUR/ha | 7 636 | 24 354 | 19 147 | +215 % | 18 603 … 19 674 |  |
-| Metsa puitsesse biomassi seotud süsiniku varu | t C/ha | 34,4 | 86,4 | 62,0 | +165 % | 60,1 … 63,9 |  |
-| Elupaikade säilitamine looduslikele liikidele | indeks 0-10 | 2,76 | 8,16 | 4,20 | +125 % | 4,18 … 4,21 |  |
-| Söögiseentest saadav potentsiaalne tulu | EUR/ha/a | 96,5 | 189,2 | 82,7 | +74 % | 78,2 … 86,8 |  |
-| Pohlade potentsiaalne saagikus | kg/ha | 0,051 | 0,668 | -0,048 | -11 % | -0,068 … -0,028 |  |
-| Orgaanilise süsiniku ärakanne | kg/ha/a | 1,07 | 0,574 | -0,166 | -20 % | -0,264 … -0,084 |  |
-| Fosfori ärakanne | kg/ha/a | 0,586 | 0,115 | -0,247 | -62 % | -0,327 … -0,176 |  |
-| Fosfori mullaerosiooniga ärakande hind | EUR/ha/a | 2,34 | 0,461 | -0,987 | -62 % | -1,31 … -0,706 |  |
+| Metsa puitsesse biomassi seotud süsiniku varu | t C/ha | 16,0 | 81,0 | 72,7 | +291 % | 70,6 … 74,7 |  |
+| Metsa puitsesse biomassi seotud süsiniku varu rahaline väärtus (aasta keskmine ETS börsihind) | EUR/ha | 4 726 | 24 005 | 21 515 | +291 % | 20 891 … 22 129 |  |
+| Elupaikade säilitamine looduslikele liikidele | indeks 0-10 | 3,00 | 8,00 | 4,21 | +125 % | 4,20 … 4,23 |  |
+| Söögiseente potentsiaalne saagikus | kg/ha | 12,0 | 31,7 | 24,5 | +113 % | 23,1 … 25,8 |  |
+| Mulla orgaanilise süsiniku varu | t C/ha | 688,0 | 934,0 | 38,9 | +4 % | 31,2 … 47,0 |  |
+| Mulla orgaanilise süsiniku varu rahaline väärtus (sotsiaalse kulu hind) | EUR/ha | 428 662 | 581 934 | 24 239 | +4 % | 19 430 … 29 304 |  |
+| Loodusmaastiku sidusus 1 km raadiuses | osakaal 0-100 (tõlgendus kinnitada) | 49,0 | 81,0 | 2,71 | +4 % | 2,53 … 2,90 |  |
+| Pohlade potentsiaalne saagikus | kg/ha | -1,00 | -1,00 | -0,045 | -11 % | -0,069 … -0,020 |  |
 
 ### Põllumaad
 
-| Teenus | Ühik | Keskm. vilets | Keskm. hea | Δ | Δ % | 95 % CI (Δ) | Märkus |
+| Teenus | Ühik | Mediaan vilets | Mediaan hea | Δ | Δ % | 95 % CI (Δ) | Märkus |
 |---|---|---|---|---|---|---|---|
-| Kahjuritõrje vajaduse vähenemine | arvatavasti % (väli pestits_vahenemine) | 8,74 | 75,7 | 54,8 | +291 % | 51,7 … 57,7 |  |
-| Elupaikade säilitamine looduslikele liikidele | indeks 0-10 | 1,22 | 3,45 | 1,62 | +101 % | 1,52 … 1,73 |  |
-| Maismaaökosüsteemide summaarne virgestusväärtus | skoor | 7,65 | 14,1 | 3,18 | +31 % | 2,86 … 3,54 |  |
-| Maismaaökosüsteemide summaarne virgestusväärtus tarbijakulude alusel | EUR/ha | 47,3 | 70,8 | 10,3 | +18 % | 8,95 … 11,9 |  |
-| Loodusturismi hüve rahaline väärtus tarbijakulude alusel | EUR/ha | 134,2 | 147,0 | 1,68 | +1 % | 0,744 … 2,65 |  |
-| Põllumajanduslike ökosüsteemide reaalboniteedid | reaalboniteet (väli boniteet) | 43,6 | 38,2 | -0,924 | -2 % | -1,67 … -0,169 |  |
-| Mustikate ja pohlade potentsiaalne tulu | EUR/ha/a | 0,137 | 0,089 | -0,103 | -62 % | -0,206 … -0,027 |  |
-| Mustikate ja pohlade potentsiaalne saagikus | kg/ha | 0,055 | 0,036 | -0,041 | -62 % | -0,083 … -0,011 |  |
+| Kahjuritõrje vajaduse vähenemine | arvatavasti % (väli pestits_vahenemine) | 0,000 | 0,000 | 26,6 | +320 % | 22,7 … 30,7 |  |
+| Elupaikade säilitamine looduslikele liikidele | indeks 0-10 | 1,00 | 3,00 | 1,63 | +102 % | 1,52 … 1,74 |  |
+| Maismaaökosüsteemide summaarne virgestusväärtus | skoor | 6,00 | 12,0 | 3,09 | +30 % | 2,71 … 3,49 |  |
+| Maismaaökosüsteemide summaarne virgestusväärtus tarbijakulude alusel | EUR/ha | 55,0 | 55,0 | 9,67 | +16 % | 8,04 … 11,4 |  |
+| Loodusmaastiku sidusus 1 km raadiuses | osakaal 0-100 (tõlgendus kinnitada) | 20,0 | 36,0 | 2,13 | +8 % | 1,46 … 2,74 |  |
+| Loodusturismi hüve – looduslikkuse suhteline väärtus loodusobjektina | skoor | 43,0 | 46,0 | 0,600 | +1 % | 0,334 … 0,874 |  |
+| Loodusturismi hüve rahaline väärtus tarbijakulude alusel | EUR/ha | 118,0 | 158,0 | 1,82 | +1 % | 0,717 … 2,97 |  |
+| Põllumajanduslike ökosüsteemide reaalboniteedid | reaalboniteet (väli boniteet) | 40,0 | 0,000 | -0,568 | -3 % | -0,998 … -0,165 |  |
 
-### Uuriv segumudel (930 m rastrid ja 1 km vektorruudud)
+### Võrdluseks: segumudel (930 m rastrid ja 1 km vektorruudud)
 
-Need kihid on jämedamad kui seisundiüksus; hinnang tuleneb klasside pindalaosade lineaarsest segumudelist (metoodika § 7) ja on **uuriv**. Näidatud on kõik ökosüsteemid (vilets → hea), sõltumata olulisusest.
+Need kihid on madalama lahutusvõimega kui seisundiüksus. Põhihinnang tuleb 10 m lahutusvõimele viidud kihist (ülal); segumudel (klasside pindalaosade lineaarne mudel, keskmisel põhinev, **uuriv**) on võrdluseks. Näidatud on kõik ökosüsteemid (vilets → hea), sõltumata olulisusest.
 
 | Teenus | Ökosüsteem | Ühik | β vilets | β hea | Δ % | 95 % CI (Δ) | Oluline |
 |---|---|---|---|---|---|---|---|
-| Lammimuldade taastamise kulu | Rohumaad | EUR (väli lammide_taastamise_kulu) | 4 702 | 6 634 | +41 % | 864,7 … 3 275 | jah |
-| Lammimuldade taastamise kulu | Sood | EUR (väli lammide_taastamise_kulu) | 351,6 | 6 857 | +1850 % | 4 482 … 8 999 | jah |
-| Lammimuldade taastamise kulu | Metsad | EUR (väli lammide_taastamise_kulu) | 1 178 | 4 659 | +296 % | 2 554 … 4 372 | jah |
-| Lammimuldade taastamise kulu | Põllumaad | EUR (väli lammide_taastamise_kulu) | 2 545 | 3 722 | +46 % | -1 098 … 3 516 | ei |
+| Lammimuldade taastamise kulu | Rohumaad | EUR/ha/a (väli lammide_taastamise_kulu) | 4 702 | 6 634 | +41 % | 864,7 … 3 275 | jah |
+| Lammimuldade taastamise kulu | Sood | EUR/ha/a (väli lammide_taastamise_kulu) | 351,6 | 6 857 | +1850 % | 4 482 … 8 999 | jah |
+| Lammimuldade taastamise kulu | Metsad | EUR/ha/a (väli lammide_taastamise_kulu) | 1 178 | 4 659 | +296 % | 2 554 … 4 372 | jah |
+| Lammimuldade taastamise kulu | Põllumaad | EUR/ha/a (väli lammide_taastamise_kulu) | 2 545 | 3 722 | +46 % | -1 098 … 3 516 | ei |
 | Vee puhastamise potentsiaali kaldapuhvrite poolt rahaline väärtus | Rohumaad | EUR/ha | 5,49 | 4,97 | -9 % | -0,805 … -0,286 | jah |
 | Vee puhastamise potentsiaali kaldapuhvrite poolt rahaline väärtus | Sood | EUR/ha | 6,75 | 5,84 | -14 % | -1,26 … -0,584 | jah |
 | Vee puhastamise potentsiaali kaldapuhvrite poolt rahaline väärtus | Metsad | EUR/ha | 6,59 | 5,93 | -10 % | -0,914 … -0,401 | jah |
@@ -106,22 +108,28 @@ Need kihid on jämedamad kui seisundiüksus; hinnang tuleneb klasside pindalaosa
 
 ## 4. Paaritatud ja paaritamata hinnang
 
-* Võrreldavaid hinnanguid: 2836; sama märgiga: 2289 (81 %).
-* Mõlemal hinnangul olulised, kuid **vastupidise märgiga**: 11 (nende puhul muudab asukoha/koosseisu kontroll järelduse suunda).
+* Võrreldavaid hinnanguid: 3434; sama märgiga: 2282 (66 %).
+* Mõlemal hinnangul olulised, kuid **vastupidise märgiga**: 17 (nende puhul muudab asukoha/koosseisu kontroll järelduse suunda).
 
 | Teenus | Üksus | Seisundipaar | Δ paaritatud | Δ paaritamata |
 |---|---|---|---|---|
-| Õhusaaste puhverdamisvõime | Rohumaad | vilets → keskmine | -0,003 | 0,031 |
-| Õhusaaste puhverdamisvõime rahaline väärtus | Rohumaad | vilets → keskmine | -0,010 | 0,093 |
-| Ökosüsteemide tugi tolmeldajatele | Sood | vilets → keskmine | -0,017 | 0,007 |
-| Ökosüsteemide tugi tolmeldajatele | Sood | vilets → hea | -0,020 | 0,008 |
-| Pohlade potentsiaalne saagikus | Metsad | vilets → keskmine | -0,038 | 0,210 |
-| Pohlade potentsiaalne saagikus | Metsad | vilets → hea | -0,048 | 0,617 |
-| Maismaaökosüsteemide summaarne virgestusväärtus | Sood | keskmine → hea | -0,201 | 2,27 |
-| Maismaaökosüsteemide summaarne virgestusväärtus | alam 20200 | keskmine → hea | -0,371 | 2,11 |
-| Maismaaökosüsteemide summaarne virgestusväärtus | alam 20300 | keskmine → hea | -0,266 | 1,79 |
-| Maismaaökosüsteemide summaarne virgestusväärtus | alam 20400 | keskmine → hea | -0,163 | 2,10 |
-| Maismaaökosüsteemide summaarne virgestusväärtus tarbijakulude alusel | alam 20200 | keskmine → hea | -1,49 | 6,86 |
+| Orgaanilise süsiniku ärakanne | Rohumaad | vilets → keskmine | 0,035 | -0,020 |
+| Orgaanilise süsiniku ärakanne | Metsad | keskmine → hea | 0,048 | -0,026 |
+| Orgaanilise süsiniku ärakanne | Metsad | vilets → hea | 0,059 | -0,042 |
+| Orgaanilise süsiniku ärakanne | alam 11800 | vilets → keskmine | 0,036 | -0,022 |
+| Fosfori mullaerosiooniga ärakande hind | Metsad | keskmine → hea | 0,024 | -0,002 |
+| Fosfori mullaerosiooniga ärakande hind | alam 11800 | vilets → keskmine | 0,017 | -0,009 |
+| Fosfori ärakanne | Metsad | keskmine → hea | 0,006 | -0,000 |
+| Fosfori ärakanne | alam 11800 | vilets → keskmine | 0,004 | -0,002 |
+| Kasemahla tootmisest saadava tulu potentsiaal | Metsad | vilets → hea | 4,88 | -2,00 |
+| Kasemahla potentsiaalne saagikus | Metsad | vilets → hea | 16,0 | -7,54 |
+| Kasemahla potentsiaalne saagikus | alam 30500 | vilets → keskmine | 1,22 | -1,89 |
+| Ökosüsteemide tugi tolmeldajatele | Rohumaad | vilets → hea | 0,037 | -0,047 |
+| Ökosüsteemide tugi tolmeldajatele | Sood | vilets → keskmine | -0,017 | 0,008 |
+| Ökosüsteemide tugi tolmeldajatele | Sood | vilets → hea | -0,020 | 0,010 |
+| Soo puitsesse biomassi seotud süsiniku varu | Sood | vilets → keskmine | -0,648 | 0,759 |
+| Veevoogude reguleerimisvõime (va linnalised teed veekogud) rahaline väärtus | Rohumaad | vilets → keskmine | -27,0 | 5,00 |
+| Veevoogude reguleerimisvõime (va linnalised teed veekogud) maht | Rohumaad | vilets → keskmine | -50,9 | 10,0 |
 
 ## 5. Mudelipõhisus (η² ≥ 0,9)
 
@@ -144,15 +152,15 @@ Põhijooksu olulistest hinnangutest (paaritatud) säilis oluliseks sama märgiga
 
 | Variant | Tase | Võrreldavaid | Põhijooksu olulisi | Säilinud | Säilinud % | Uusi olulisi | Spearman ρ (Δ) |
 |---|---|---|---|---|---|---|---|
-| klaster5km | okosusteem | 364 | 219 | 217 | +99 % | 1 | 1,000 |
-| klaster5km | alam | 2508 | 1117 | 1104 | +99 % | 30 | 1,000 |
-| klaster20km | okosusteem | 364 | 219 | 210 | +96 % | 2 | 1,000 |
-| klaster20km | alam | 2508 | 1117 | 1099 | +98 % | 22 | 1,000 |
-| ala_0_25ha | okosusteem | 364 | 219 | 218 | +100 % | 7 | 0,991 |
-| ala_0_25ha | alam | 2508 | 1117 | 1096 | +98 % | 69 | 0,946 |
-| ala_4ha | okosusteem | 363 | 218 | 209 | +96 % | 4 | 0,927 |
-| ala_4ha | alam | 1779 | 924 | 817 | +88 % | 22 | 0,893 |
-| seeme_2 | okosusteem | 364 | 219 | 217 | +99 % | 0 | 1,000 |
-| seeme_2 | alam | 2508 | 1117 | 1110 | +99 % | 9 | 1,000 |
+| klaster5km | okosusteem | 391 | 184 | 184 | +100 % | 9 | 1,000 |
+| klaster5km | alam | 3043 | 991 | 983 | +99 % | 32 | 1,000 |
+| klaster20km | okosusteem | 391 | 184 | 184 | +100 % | 1 | 1,000 |
+| klaster20km | alam | 3043 | 991 | 973 | +98 % | 20 | 1,000 |
+| ala_0_25ha | okosusteem | 391 | 184 | 182 | +99 % | 17 | 0,986 |
+| ala_0_25ha | alam | 3043 | 991 | 973 | +98 % | 79 | 0,919 |
+| ala_4ha | okosusteem | 390 | 183 | 164 | +90 % | 3 | 0,859 |
+| ala_4ha | alam | 2163 | 832 | 716 | +86 % | 38 | 0,879 |
+| seeme_2 | okosusteem | 391 | 184 | 184 | +100 % | 6 | 1,000 |
+| seeme_2 | alam | 3043 | 991 | 990 | +100 % | 10 | 1,000 |
 
 Variandid: `klaster5km`, `klaster20km` (bootstrap-klastri suurus), `ala_0_25ha`, `ala_4ha` (minimaalne ala stratumis), `seeme_2` (teine juhuslik seeme).

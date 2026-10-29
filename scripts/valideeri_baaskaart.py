@@ -30,8 +30,12 @@ def main() -> None:
             m = dv != 0
             cnt += np.bincount(dv[m].astype(np.int64) * 8 + uv[m].astype(np.int64), minlength=cnt.size)
     idx = np.flatnonzero(cnt)
-    raster = pl.DataFrame({"kood": (idx // 8).astype(np.int32), "uld": (idx % 8).astype(np.int8), "n": cnt[idx]})
-    per_code = raster.group_by("kood").agg(pl.col("uld").n_unique().alias("n_uld"), pl.col("uld").first(), pl.col("n").sum())
+    raster = pl.DataFrame(
+        {"kood": (idx // 8).astype(np.int32), "uld": (idx % 8).astype(np.int8), "n": cnt[idx]}
+    )
+    per_code = raster.group_by("kood").agg(
+        pl.col("uld").n_unique().alias("n_uld"), pl.col("uld").first(), pl.col("n").sum()
+    )
     cls = pl.read_parquet(ROOT / "data/derived/klassid.parquet")
     j = cls.join(per_code, on="kood", how="full", suffix="_r")
     out = {
@@ -42,9 +46,18 @@ def main() -> None:
         "uld lahknevusi": j.filter(pl.col("uld") != pl.col("uld_r")).height,
         "pindala kokku km2 (rastrist)": float(per_code["n"].sum() * 25 / 1e6),
         "pindala kokku km2 (klassid.parquet)": float(cls["n_pix"].sum() * 25 / 1e6),
-        "pindala seisundi (uld) kaupa km2": {int(k): float(v) for k, v in raster.group_by("uld").agg(pl.col("n").sum()).sort("uld").select("uld", pl.col("n") * 25 / 1e6).iter_rows()},
+        "pindala seisundi (uld) kaupa km2": {
+            int(k): float(v)
+            for k, v in raster.group_by("uld")
+            .agg(pl.col("n").sum())
+            .sort("uld")
+            .select("uld", pl.col("n") * 25 / 1e6)
+            .iter_rows()
+        },
     }
-    (ROOT / "data/tulemused/validatsioon_baaskaart.json").write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+    (ROOT / "data/tulemused/validatsioon_baaskaart.json").write_text(
+        json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     print(json.dumps(out, ensure_ascii=False, indent=2))
 
 

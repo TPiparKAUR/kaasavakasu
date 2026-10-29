@@ -1,0 +1,35 @@
+layer_id,nimi,pohjus,kate_v1,kate_v2,abs_rel_valim_mediaan,abs_rel_statistik_mediaan,osa_mediaan_null,olulisi_v1,olulisi_v2_keskmine,olulisi_v2_mediaan,suund_muutus,hinnang_lisandus
+kasemahl_hind_2022_10m,Kasemahla tootmisest saadava tulu potentsiaal,erand,0.4099031320543312,0.4099031320543312,0.0,0.6555909454853696,0.06578947368421052,4,3,2,0,0
+kasemahl_saagikus_2020_10m,Kasemahla potentsiaalne saagikus,erand,0.4099107333450495,0.40990696879494326,0.0,0.5647539418104504,0.0,3,3,2,0,0
+mustikad_pohlad_hind_2022_10m,Mustikate ja pohlade potentsiaalne tulu,erand,0.9389085317334468,0.9389085317334468,0.0,1.0,0.881578947368421,5,5,5,0,0
+mustikad_pohlad_saagikus_2020_10m,Mustikate ja pohlade potentsiaalne saagikus,erand,0.9389085317334468,0.9389085317334468,0.0,1.0,0.881578947368421,5,5,5,0,0
+pohlad_saagikus_2020_10m,Pohlade potentsiaalne saagikus,erand,0.572305866343846,0.572305866343846,0.0,0.2864702709990561,0.0,3,3,4,0,0
+lamm_grd1000_am_drained_2022,Lammimuldade taastamise kulu,madal_lahutus,,1.0,0.0,1.0,0.8881578947368421,10,0,0,0,0
+vee_puhastamise_potentsiaal_p_eur_ha_2022_930m,Vee puhastamise potentsiaali kaldapuhvrite poolt rahaline väärtus,madal_lahutus,,1.0,0.0,1.0,0.7894736842105263,9,6,2,0,0
+vee_puhastamise_potentsiaal_p_kg_ha_a_2022_930m,Vee puhastamise potentsiaal kaldapuhvrite poolt,madal_lahutus,,1.0,0.0,1.0,0.7894736842105263,9,6,2,0,0
+c_tonn_per_ha_final_2022_10m,Mulla orgaanilise süsiniku varu,nodata0,0.9640077014818654,1.0,0.006217083308651061,0.09606142441942123,0.039473684210526314,4,7,4,0,0
+elupaigahuve_pakkumine_2022_10m,Elupaikade säilitamine looduslikele liikidele,nodata0,0.9904517204602222,1.0,9.10491970274041e-6,0.04502508494298546,0.03289473684210526,12,12,12,0,0
+erosioon_c_kg_ha_a_2022_10m,Orgaanilise süsiniku ärakanne,nodata0,0.9755528904546752,1.0,0.004609974961024443,0.9240677254518828,0.3092105263157895,8,9,8,1,0
+erosioon_p_eur_ha_a_2022_10m,Fosfori mullaerosiooniga ärakande hind,nodata0,0.9642496292532584,1.0,0.025218070083899757,0.988285639185277,0.4144736842105263,7,6,7,1,0
+erosioon_p_kg_ha_a_2022_10m,Fosfori ärakanne,nodata0,0.9642496292532584,1.0,0.025218070083899757,0.9882856388769421,0.4144736842105263,7,6,7,1,0
+mullasusinik_aasta_keskmine_2022_10m,Mulla orgaanilise süsiniku varu rahaline väärtus (aasta keskmine ETS börsihind),nodata0,0.9640077014818654,1.0,0.006217083308651061,0.09606154979761872,0.039473684210526314,4,7,4,0,0
+mullasusinik_aasta_sotsiaalne_kulu_2022_10m,Mulla orgaanilise süsiniku varu rahaline väärtus (sotsiaalse kulu hind),nodata0,0.9640077014818654,1.0,0.006217083308651006,0.09606221365287276,0.039473684210526314,4,7,4,0,0
+puitne_biomass_c_t_ha_kogu_eesti_sum_2022_5m,Metsa puitsesse biomassi seotud süsiniku varu,nodata0,0.5012288263700553,1.0,0.0,0.0,0.03289473684210526,3,3,3,0,9
+seened_saagikus_2020_10m,Söögiseente potentsiaalne saagikus,nodata0,0.9605990152733378,1.0,0.017444876360936334,1.0,0.6644736842105263,9,9,8,0,0
+sidusus_1km_2022_10m,Loodusmaastiku sidusus 1 km raadiuses,nodata0,0.9904517158589068,1.0,9.10491970274041e-6,0.03611283015154709,0.006578947368421052,11,11,11,0,0
+vee_reguleerimisvoime_eur_ha_linnalised_teed_veekogud_2022_10m,Veevoogude reguleerimisvõime (va linnalised teed veekogud) rahaline väärtus,nodata0,0.9762058589847677,1.0,0.0028109952757903733,0.07753504385876309,0.039473684210526314,4,6,1,0,0
+vee_reguleerimisvoime_vol_ha_linnalised_teed_veekogud_2022_10m,Veevoogude reguleerimisvõime (va linnalised teed veekogud) maht,nodata0,0.9762058589847677,1.0,0.002810995275790429,0.07740082855603414,0.039473684210526314,4,6,1,0,0
+virgestuse_koondvaartus_2022_5m,Maismaaökosüsteemide summaarne virgestusväärtus,nodata0,0.9520363708603516,1.0,0.0,0.051745480615149275,0.0,12,12,12,0,0
+kliimaregulatsioon_2022_5m,Mikrokliima reguleerimine (temperatuuri erinevuse määr),sama,1.0,1.0,0.0,0.0,0.0,0,0,0,0,0
+loodusturism_eur_ha_2022_5m,Loodusturismi hüve rahaline väärtus tarbijakulude alusel,sama,1.0,1.0,0.0,0.06878603420642299,0.013157894736842105,11,11,9,0,0
+loodusturism_kaalsum_2022_5m,Loodusturismi hüve – looduslikkuse suhteline väärtus loodusobjektina,sama,1.0,1.0,0.0,0.01496587037459346,0.013157894736842105,11,11,11,0,0
+ohusaaste_puhverdusvoime_2022_5m,Õhusaaste puhverdamisvõime,sama,1.0,1.0,0.0,0.027993266069095468,0.0,7,7,7,0,0
+ohusaaste_puhverdusvoime_eur_ha_2022_5m,Õhusaaste puhverdamisvõime rahaline väärtus,sama,1.0,1.0,0.0,0.021876983499630798,0.0,7,7,7,0,0
+okosusteemide_tugi_tolmeldajatele_2022_10m,Ökosüsteemide tugi tolmeldajatele,sama,1.0,1.0,0.0,0.019851944407668964,0.019736842105263157,12,12,12,0,0
+puitne_biomass_c_eur_ha_ets_borsihind_kogu_eesti_sum_2022_5m,Metsa puitsesse biomassi seotud süsiniku varu rahaline väärtus (aasta keskmine ETS börsihind),sama,1.0,1.0,0.0,0.0,0.02631578947368421,3,3,3,0,0
+puitne_biomass_c_t_ha_niit_sum_2022_5m,Niidu puitsesse biomassi seotud süsiniku varu,sama,1.0,1.0,0.0,0.0,0.21052631578947367,3,3,3,0,0
+puitne_biomass_c_t_ha_soo_sum_2022_5m,Soo puitsesse biomassi seotud süsiniku varu,sama,1.0,1.0,0.0,0.0,0.046052631578947366,3,3,3,0,0
+seened_hind_2022_10m,Söögiseentest saadav potentsiaalne tulu,sama,1.0,1.0,0.0,1.0,0.6644736842105263,9,9,8,0,0
+virgestuse_koondvaartus_eur_ha_2022_5m,Maismaaökosüsteemide summaarne virgestusväärtus tarbijakulude alusel,sama,1.0,1.0,0.0,0.05998151842984101,0.0,11,11,11,0,0
+biotorje_2022,Kahjuritõrje vajaduse vähenemine,vektor,0.16074183325022676,1.0,0.9974681558568418,1.0,0.6842105263157895,3,8,3,0,9
+toiduteenus_2022,Põllumajanduslike ökosüsteemide reaalboniteedid,vektor,0.16074183325022676,1.0,0.9976813170700414,1.0,0.6842105263157895,2,7,3,0,9

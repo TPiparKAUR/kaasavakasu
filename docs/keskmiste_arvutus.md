@@ -1,5 +1,10 @@
 # Keskmiste arvutuse dokumentatsioon ja valideerimine
 
+> **Metoodika v1.** See dokument kirjeldab ja valideerib metoodika v1 keskmiste arvutust (NoData välja, aritmeetiline
+> keskmine). Metoodika v2 (täpsed pikslimediaanid, NoData = 0 v.a erandkihid) on kirjeldatud failides
+> [metoodika.md](metoodika.md) ja [metoodika_v2_otsused.md](metoodika_v2_otsused.md); v2 mediaanide sõltumatu kontroll on
+> `scripts/valideeri_keskmised.py` V8. Keskmisepõhine arvutus on v2-s alles ja selle kontrollid V1–V7 kehtivad.
+
 **Repo:** https://github.com/TPiparKAUR/kaasavakasu · **Haru:** `claude/compassionate-babbage-mdfftn`
 **Analüüsitud kood (SHA):** `542ce57bc2cb41f93f5409215e71b4e71681ed8a` (kõik koodiviited alljärgnevas on selle SHA püsilingid)
 **Skriptid (SHA):** `721acb837149c7dd5ac6f5562e5f03382bc88e47` (võrreldes 542ce57-ga lisab ainult `scripts/valideeri_*.py`, `scripts/naide_paaritatud.py`, `data/tulemused/validatsioon_*.json`, `README.md` testide arvu; `src/` ja `site_src/` on identsed SHA-ga 542ce57). See dokument (`docs/keskmiste_arvutus.md`) lisatakse järgmises commitis.

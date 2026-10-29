@@ -1,24 +1,23 @@
 {
   "V1 paaritamata (plokitabel vs lahtrid.parquet)": {
-    "layers": 31,
-    "cells": 3772,
+    "layers": 34,
+    "cells": 4283,
     "missing": 0,
     "n_mismatch": 0,
-    "max_rel_err": 1.4198987411450647e-14,
-    "worst": "seened_saagikus_2020_10m {'unit_level': 'okosusteem', 'unit_code': 3, 'seisund': 'keskmine', 'n': 149995639, 'mean': 36.53050616036008, 'unit_level_right': 'okosusteem', 'unit_code_right': 3, 'seisund_right': 'keskmine', 'n2': 149995639, 'mean2': 36.530506160359565}"
+    "max_rel_err": 3.40437535944867e-14,
+    "worst": "seened_saagikus_2020_10m {'unit_level': 'okosusteem', 'unit_code': 3, 'seisund': 'keskmine', 'n': 150880220, 'mean': 36.31633500081487, 'unit_level_right': 'okosusteem', 'unit_code_right': 3, 'seisund_right': 'keskmine', 'n2': 150880220, 'mean2': 36.31633500081363}"
   },
   "V2 paaritatud Δ (sõltumatu stratifitseerimine vs paarid.parquet)": {
-    "rows_with_delta_m (blokitabelist, ilma NaN-ita)": 3294,
-    "rows NaN (stratume pole, n_strata=0)": 367,
-    "segumudeli read (ei ole plokitabelit; välja jäetud)": 36,
-    "recomputed": 3294,
+    "rows_with_delta_m (blokitabelist, ilma NaN-ita)": 3952,
+    "rows NaN (stratume pole, n_strata=0)": 228,
+    "recomputed": 3952,
     "unmatched_in_recompute": 0,
     "n_strata_mismatch": 0,
     "max_abs_diff": 1.1641532182693481e-10,
-    "max_rel_err": 2.3595244381084122e-14
+    "max_rel_err": 3.830014074615616e-14
   },
   "V3 tüüp x seisund (klassitabel vs kaasnev_tuup_seisund.parquet)": {
-    "cells": 4513,
+    "cells": 5165,
     "n_mismatch": 0,
     "max_rel_err": 0.0,
     "worst": null,
@@ -26,17 +25,17 @@
     "area_rows": 152
   },
   "V4 ökosüsteemi keskmine: plokitabel vs klassitabel": {
-    "cells": 363,
+    "cells": 408,
     "max_rel_err": 2.319297516131923e-15,
     "cells_over_1e-9": 0,
     "worst": []
   },
   "V5 veebilehe JSON": {
-    "kaasnev.json tuubid: cells": 4513,
+    "kaasnev.json tuubid: cells": 5165,
     "kaasnev.json tuubid: mismatches (>5e-5 rel)": 0,
-    "kaasnev.json suured: cells (v.a. segumudel)": 1152,
+    "kaasnev.json suured: cells (v.a. segumudel)": 1292,
     "kaasnev.json suured: mismatches": 0,
-    "lahtrid.json: rows": 3808,
+    "lahtrid.json: rows": 4283,
     "lahtrid.json: mismatches": 0
   },
   "V6 loogika": {
@@ -65,8 +64,8 @@
       },
       "seened: EUR/ha ÷ kg/ha": {
         "oodatud": 4.5,
-        "min": 3.2000247780612945,
-        "max": 4.481178998181829,
+        "min": 4.495316071921661,
+        "max": 4.508623898614772,
         "n": 12
       },
       "mustikad/pohlad: EUR/ha ÷ kg/ha": {
@@ -79,19 +78,42 @@
   },
   "V7 paaritatud vs paaritamata": {
     "okosusteem": {
-      "võrreldavaid": 109,
-      "märk erineb": 13,
-      "mediaan |Δm−Δu| / |Δu|": 0.8596224169666266
+      "võrreldavaid": 130,
+      "märk erineb": 15,
+      "mediaan |Δm−Δu| / |Δu|": 0.8600380007932038
     },
     "alam": {
-      "võrreldavaid": 828,
-      "märk erineb": 110,
-      "mediaan |Δm−Δu| / |Δu|": 0.4904425597135261
+      "võrreldavaid": 1002,
+      "märk erineb": 138,
+      "mediaan |Δm−Δu| / |Δu|": 0.5906362481844887
     },
     "paare kus mõlemad keskmised = 0 (POSITIVE_MIN filtrit analüüsis ei ole)": {
-      "rida": 273,
-      "neist enough_m": 231,
-      "kihte": 7
+      "rida": 379,
+      "neist enough_m": 307,
+      "kihte": 11
     }
+  },
+  "V8 mediaanid (sagedustabel vs tulemused)": {
+    "kihte": 34,
+    "ühik/tüüp mediaanid vahele jäetud (sagedustabel > max_rows)": [
+      "erosioon_c_kg_ha_a_2022_10m (236,498,290 rida)",
+      "erosioon_p_eur_ha_a_2022_10m (234,154,813 rida)",
+      "erosioon_p_kg_ha_a_2022_10m (234,155,014 rida)",
+      "okosusteemide_tugi_tolmeldajatele_2022_10m (392,762,219 rida)",
+      "puitne_biomass_c_eur_ha_ets_borsihind_kogu_eesti_sum_2022_5m (700,434,005 rida)",
+      "puitne_biomass_c_t_ha_kogu_eesti_sum_2022_5m (76,152,073 rida)"
+    ],
+    "lahtrid.median: võrreldud": 3527,
+    "lahtrid.median: puudub ühel poolel": 0,
+    "lahtrid.median: lahknevusi (> 1e-6 rel)": 0,
+    "lahtrid.median_nz: võrreldud": 3275,
+    "lahtrid.median_nz: puudub ühel poolel": 0,
+    "lahtrid.median_nz: lahknevusi (> 1e-6 rel)": 0,
+    "kaasnev_tuup_seisund.median: võrreldud": 4253,
+    "kaasnev_tuup_seisund.median: puudub ühel poolel": 0,
+    "kaasnev_tuup_seisund.median: lahknevusi (> 1e-6 rel)": 0,
+    "paarid.delta_m_med: võrreldud": 3952,
+    "paarid.delta_m_med: puudub ühel poolel": 0,
+    "paarid.delta_m_med: lahknevusi (> 1e-6 rel)": 0
   }
 }
