@@ -88,9 +88,10 @@ kirjas, kuidas seda rakendatakse. Rõhk on selgusel, **mitte info vähendamisel*
 ## 7. Ausus ja päritolu
 
 * Iga arv on märgistatud päritolu järgi: **mõõdetud/modelleeritud kiht** (ELME), **tuletatud**
-  (seisund baaskaardilt), **uuriv** (‡ segumudel), **definitsiooniline** (†).
+  (seisund baaskaardilt), **madalam lahutusvõime** (‡; 930 m / 1 km kiht viidud 10 m lahutusvõimele),
+  **erandkiht** (§; puuduvad andmed välja jäetud), **definitsiooniline** (†). Segumudel on uuriv ja ainult võrdluseks.
 * Ebakindlus on nähtav: usaldusvahemik, olulisus (q), hinnangute arv (paare/plokke).
-* Hoiatused (mudelipõhisus, uuriv hinnang, vähe andmeid) on graafikuga samas kohas, mitte
+* Hoiatused (mudelipõhisus, madalam lahutusvõime, vähe andmeid) on graafikuga samas kohas, mitte
   eraldi lehel.
 
 ## 8. Tehniline
@@ -119,7 +120,7 @@ põhjal vaheleht **Kihtide ülevaade**. Mida graafik tegi hästi ja mida paranda
 | Ökosüsteemi/seisundi lõige puudub | graafik ei näita, millise ökosüsteemi/seisundi pikslid jaotuse moodustavad (kõik klassid koos, ilmselt ka seisundita ala) | lõige ökosüsteemi/alamökosüsteemi järgi; arvesse lähevad ainult seisundiga pikslid (vt metoodika § 5.3) |
 | Kõik paneelid sama kõrgusega | oluline ja ebaoluline ei eristu | järjestus: grupp → nimi; lisaks sort kattuvuse, nullide osakaalu või muutuse järgi |
 
-Ära jäetud: kihtidel, mille aggregeerimine on uuriv (930 m, 1 km vektor), pikslitaseme jaotust
-ei ole; need on tähistatud „jaotus puudub“. Kihtide ülevaade arvestab ainult seisundiga
+Metoodika v2: ka madalama lahutusvõimega kihtidel (930 m, 1 km vektor) on jaotus 10 m lahutusvõimel
+(ruudu sees on väärtus sama). Kihtide ülevaade arvestab ainult seisundiga
 piksleid (hea/keskmine/vilets), mitte kogu kihi pindala, seega ei lange paneelid täpselt kokku
 kogu raster-histogrammiga.
