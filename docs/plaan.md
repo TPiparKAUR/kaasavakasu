@@ -1,6 +1,7 @@
 # Plaan: ökosüsteemiteenuste muutus seisundiklasside vahel
 
-Koostatud 2026-10-19. Plaani täitmise seis on lõpus.
+Koostatud 2026-10-19. Plaani täitmise seis on lõpus. See on algne plaan (metoodika v1, keskmised); kehtiv metoodika v2 (täpsed
+pikslimediaanid) on kirjeldatud failides [metoodika.md](metoodika.md) ja [metoodika_v2_otsused.md](metoodika_v2_otsused.md).
 
 ## 1. Eesmärk
 

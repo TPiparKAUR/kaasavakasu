@@ -20,7 +20,7 @@ PROVISIONING = "Varustav"
 REGULATING = "Reguleeriv ja säilitav"
 CULTURAL = "Kultuuriline"
 
-#: Mõju tugevuse ettepanek suhtelise muutuse (|Δ| / halvema seisundi keskmine) järgi; lävendid on
+#: Mõju tugevuse ettepanek suhtelise muutuse (|Δ| / halvema seisundi mediaan; metoodika v2) järgi; lävendid on
 #: kokkuleppeline ettepanek, mitte andmetest tulenev piir.
 STRENGTH_BREAKS: tuple[float, float] = (0.10, 0.50)
 
@@ -229,8 +229,8 @@ INDICATORS: tuple[Indicator, ...] = (
         "ärahoitud kulu: superfosfaadi hind 715 EUR/t, ümberarvutatult puhta fosfori hind 4000 EUR/t",
         "osaliselt: ärahoitud kulu; ainult kaldapuhvrite tsoon",
         "kattub fosfori ärakandega erosioonist; kg ja EUR on sama hüve",
-        "930 m eraldusvõime: seisundi ja teenuse seost saab hinnata ainult segumudeliga ökosüsteemi tasemel (uuriv)",
-        "UURIV tulemus: ei ole detailsete tüüpide tasemel",
+        "930 m eraldusvõime (madalam lahutusvõime): arvutuseks viidud baaskaardi 10 m lahutusvõimele; seisundite erinevus tuleb ainult 930 m ruutude vahelistest erinevustest; segumudel (uuriv) on võrdluseks",
+        "madalama lahutusvõimega tulemus: tüüpide tasemel on väärtus 930 m ruudu väärtus",
     ),
     Indicator(
         "lamm",
@@ -247,8 +247,8 @@ INDICATORS: tuple[Indicator, ...] = (
         "väärtuse ülekande meetod lammisoo taastamisväärtuse alusel; väheneb kuivendatud pindalaga",
         "osaliselt: taastamiskulu on kulu, mitte kasu",
         "kattub vee reguleerimisvõimega lammidel",
-        "1 km ruudustik, väli lammide_taastamise_kulu; uuriv segumudel",
-        "UURIV tulemus; ainult ökosüsteemi tasemel",
+        "1 km ruudustik (madalam lahutusvõime), väli lammide_taastamise_kulu; arvutuseks viidud 10 m lahutusvõimele; segumudel (uuriv) on võrdluseks",
+        "madalama lahutusvõimega tulemus: tüüpide tasemel on väärtus 1 km ruudu väärtus",
     ),
     Indicator(
         "biotorje",
@@ -320,7 +320,7 @@ INDICATORS: tuple[Indicator, ...] = (
         "osaliselt: potentsiaalne, mitte realiseeritud tulu",
         "mustikate ja pohlade kiht sisaldab pohlad_saagikus kihi pohlad; ära liida neid",
         "2020. aasta ELME1 kiht (baaskaart 2022); mudel kasvukohatüübi ja täiuse põhjal; enamik pikslitest on null",
-        "keskmine on arvutatud kogu klassi pindala kohta, nullid kaasa arvatud",
+        "mediaan ja keskmine on arvutatud kogu klassi kehtiva pindala kohta, nullid kaasa arvatud; puuduvad andmed (NoData) on välja jäetud (erandkiht)",
         laiendid=("pohlad_saagikus_2020_10m",),
     ),
     Indicator(

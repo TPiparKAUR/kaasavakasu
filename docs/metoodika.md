@@ -61,7 +61,7 @@ kui baaskaardil on tal vähemalt kaks seisundit.
 
 ### 2.3 Teenuste kihid
 
-Analüüsitakse `eval = TRUE` kihid (31 teenust tabelis; tulemustes on **30**, sest `biotorje_kahjuritorje_vahenemine` on sama faili väli, mis `biotorje_2022`, ja kasutatud on ühte, vt allpool). Nende töötlus:
+Analüüsitakse `eval = TRUE` kihid (31 teenust tabelis; tulemustes on neist **30** ja lisaks 4 lähtekasu lisakihti (§ 5.4), kokku 34, sest `biotorje_kahjuritorje_vahenemine` on sama faili väli, mis `biotorje_2022`, ja kasutatud on ühte, vt allpool). Nende töötlus:
 
 | Rühm | Kihte | Käsitlus |
 |---|---|---|
@@ -163,7 +163,7 @@ samal läbikäigul (`oks.hist`, `oks.aggregate`) iga **detailse klassi** kohta p
   seisundi piksli väärtus on suurem kui halvema seisundi pikslil (AUC; võrdsed vahemikud pooleks). Mõlemad on arvutatud
   vahemike täpsusega.
 * **Piirang:** pikslid on ruumiliselt sõltuvad, seega on jaotused ja nende näitajad **kirjeldavad**; olulisuse hinnang on § 6.
-  Jämedate ruudustike (segumudel) kihtidel pikslitaseme jaotust ei ole.
+  Madalama lahutusvõimega kihtidel (930 m, 1 km) on jaotus 10 m lahutusvõimel; ruudu sees on väärtus sama.
 * **Leitud viga (parandatud):** esimeses versioonis sattus NoData väärtus (nt 255, 65535) vahemike valiku proovi, sest
   GDAL tuletab allavalimisel (`out_shape`) maski pyramiididest. Kehtivus määratakse nüüd väärtuste võrdlusest NoData-ga;
   regressioonitest (`tests/test_hist.py`) kasutab ruudumustris NoData-t ja pyramiide.
@@ -251,7 +251,7 @@ mitte iseseisev tähelepanek. Seda ei saa metaandmetest alati lugeda, seepärast
 
 η² on kirjeldav näitaja (ruumilise sõltuvuse tõttu pole sellel olulisuse tõlgendust). Lehel märgitakse tulemus nurgamärgiga, kui
 `eta2_det ≥ 0,9`; kihid, mille seos seisundiga on teadaolevalt definitsiooniline (`toiduteenus_2022`, `biotorje_2022`), saavad lisaks märgi †.
-η² ≥ 0,9 on tulemustes ainult kuuel kihi × ökosüsteemi kombinatsioonil (`docs/tulemused.md` § 5), mistõttu η² ei asenda kihi
+η² ≥ 0,9 on tulemustes ainult kaheksal kihi × ökosüsteemi kombinatsioonil (`docs/tulemused.md` § 5), mistõttu η² ei asenda kihi
 metoodika tundmist.
 
 **Eraldi leid:** `toiduteenus_2022` väärtusklass A–D langeb põllukultuuride seisundiklassiga (A–D) kokku (keskmine väärtusklass klassides

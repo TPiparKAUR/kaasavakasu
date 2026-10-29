@@ -9,7 +9,8 @@
 | Seisundi tähenduse tuletamine ja kontroll täisresolutsioonil | tehtud (264 koodi, 0 erandit) |
 | 25 rastri (5/10 m) ja 2 põllumassiivi vektorkihi aggregeerimine | tehtud |
 | Statistiline analüüs (paaritatud/paaritamata, klastri-bootstrap, FDR) | tehtud, `data/tulemused/` |
-| 930 m rastrid ja 1 km vektor (segumudel) | tehtud, **uuriv** |
+| 930 m rastrid ja 1 km vektor | tehtud; metoodika v2: viidud 10 m lahutusvõimele (madalam lahutusvõime), segumudel (uuriv) võrdluseks |
+| Metoodika v2: täpsed pikslimediaanid, NoData = 0 (v.a erandkihid), vektorireeglid | tehtud, `docs/metoodika_v2_lopparuanne.md` |
 | Tundlikkus (klaster 5/20 km, min ala 0,25/4 ha, teine seeme) | tehtud, `docs/tulemused.md` § 6 |
 | Veebileht | tehtud, `site_src/`, ehitus `python -m oks site` |
 | Väärtuste jaotus seisundi kaupa (pikslitaseme histogrammid) | tehtud; 28 kihti, kontroll plokitabeli vastu 3 081 kombinatsiooni, 0 lahknevust; veebis: Teenuse detail, Jaotused |
@@ -37,7 +38,7 @@
 2. **`ohusaaste_puhverdusvoime_2022_5m`:** tabeli märkus „255 käitub kui 0”. Käsitletud NoData-na. Kui 255 tähendab hoopis väärtust 0 (kehtiv), muutub kihi keskmine.
 3. **Ühikud**, mida tabel ei nimeta: `biotorje_2022` (`pestits_vahenemine`, arvatavasti %), `toiduteenus_2022` (`boniteet`), `lamm_grd1000_am_drained_2022` (`lammide_taastamise_kulu`), `kliimaregulatsioon_2022_5m` (suhtarv).
 4. **`eval = FALSE` kihid** (73 arhiivis): kas mõnda neist tuleb hiljem analüüsida? Täiendavad kihid (`*_taiendavad`) on andmekataloogis olemas.
-5. **Segumudel** (930 m rastrid, `lamm_grd1000…`): kas eeldus „väärtus sõltub klassist” on neil kihtidel mõistlik? Vastasel juhul tuleks need jätta analüüsist välja.
+5. **Madalama lahutusvõimega kihid** (930 m rastrid, `lamm_grd1000…`): 10 m lahutusvõimel kordab hinnang ruudu väärtust ja seisundite erinevus tuleb ainult ruutude vahelistest erinevustest. Kas see on neil kihtidel piisav või tuleks need jätta analüüsist välja? (Segumudel on võrdluseks.)
 6. **Aastate erinevus:** teenuste algandmed 2020 vs baaskaart 2022; kas see on vastuvõetav?
 
 ## GitLab

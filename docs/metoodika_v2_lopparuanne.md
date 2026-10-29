@@ -68,8 +68,15 @@ tööplaan ja seis: [metoodika_v2_tooplaan.md](metoodika_v2_tooplaan.md). Kõik 
 v1 on commit `5aa4596` (sildi tegemine ei olnud sessioonis lubatud; SHA on püsiv).
 
 1. **Enne liitmist**: haru lihtsalt mitte liita; vaikeharu ja peaaadressi sait jäävad v1-ks.
-2. **Pärast squash-liitmist**: `git revert <squash-commit>` vaikeharus (üks commit, taastab kõik muudetud failid v1 seisu). Ühe faili taastamine: `git checkout 5aa4596 -- <tee>`.
-3. **Sait**: `pages.yml` ehitab peaaadressile niikuinii v1 (commit `5aa4596`, muutmata); v2 on `/v2/`. Pärast `git revert`-i kaob `/v2/` järgmise Pages-ehitusega. Lõpliku vahetuse korral ehitada v2 otse `_site`-i ja eemaldada v1 sammud (kommentaar töövoos).
+2. **Pärast liitmist** (vaikeharus on v2 commit'id `20f04a6` (#1) ja tekstide parandus (#2)):
+   * **Üks samm, sõltumata v2 commit'ide arvust** (soovitatav): `git restore --source=5aa4596 --staged --worktree -- .`, seejärel
+     `git commit -m "Restore methodology v1 (5aa4596)"` ja push. Kogu repo on siis täpselt v1 seisus, ka metoodika kirjeldus;
+     v2-s lisatud failid eemaldatakse (kontrollitud: tulemus võrdub commit'iga `5aa4596`). Git'ist välja jäetud kohalikke
+     andmeid (`data/derived`, `data/cache`) see ei muuda.
+   * Või commit'ide kaupa: `git revert` uuemast vanemani (#2 commit, seejärel `20f04a6`).
+   * Ühe faili taastamine: `git checkout 5aa4596 -- <tee>`. v1 failide vaatamiseks ilma tagasiminekuta:
+     `https://github.com/TPiparKAUR/kaasavakasu/blob/5aa4596/<tee>`.
+3. **Sait**: `pages.yml` ehitab peaaadressile niikuinii v1 (commit `5aa4596`, muutmata); v2 on `/v2/`. Pärast v1 taastamist kaob `/v2/` järgmise Pages-ehitusega (v1 töövoog seda ei ehita). Lõpliku vahetuse korral ehitada v2 otse `_site`-i ja eemaldada v1 sammud (kommentaar töövoos).
 4. **Andmed**: v1 tulemustabelid (`data/tulemused`) on git'is commit'is `5aa4596`, seega v1 sait ehitub ilma ümberarvutuseta. Kohalikud plokitabelid (`data/derived/plokid`, ei ole git'is) on v2 reeglitega; v1 koodi täielikuks taasarvutuseks käivitada `oks aggregate --force` ja `oks fields --force` (~2 h).
 5. **Analüüsi vahemälu** `data/cache/analyys` (ei ole git'is) tuleb koodi muutmisel kustutada.
 
