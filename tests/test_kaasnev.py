@@ -142,6 +142,7 @@ def test_strength_scale() -> None:
     assert indikaatorid.strength(-0.2) == "keskmine"
     assert indikaatorid.strength(0.8) == "tugev"
     assert indikaatorid.strength(None) == ""
+    assert indikaatorid.strength(float("nan")) == ""
 
 
 def test_requirements_have_valid_status() -> None:

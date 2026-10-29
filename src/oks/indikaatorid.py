@@ -13,6 +13,7 @@ valdkonna ekspert kinnitab. CICES-i klasside koode siia ei kirjutata, sest neid 
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -425,8 +426,11 @@ def all_layers() -> list[str]:
 
 
 def strength(rel: float | None) -> str:
-    """Mõju tugevuse ettepanek (``nõrk``, ``keskmine``, ``tugev``) suhtelise muutuse absoluutväärtuse järgi."""
-    if rel is None:
+    """Mõju tugevuse ettepanek (``nõrk``, ``keskmine``, ``tugev``) suhtelise muutuse absoluutväärtuse järgi.
+
+    Puuduv suhteline muutus (``None`` või ``NaN``, nt kui halvema seisundi mediaan on 0) ei anna tugevust.
+    """
+    if rel is None or not math.isfinite(rel):
         return ""
     a = abs(rel)
     lo, hi = STRENGTH_BREAKS

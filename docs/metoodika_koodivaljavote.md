@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Analüüsitud kood | vaikeharu `claude/compassionate-babbage-mdfftn`, commit `b799458` (`b799458d61433b152becf2eeb2ee057de56b41cb`), metoodika v2 |
-| Koostatud | 2026-10-29, töö harus `claude/practical-knuth-zzw4kt`. Projekti koodi ega andmeid ei muudetud. |
+| Koostatud | 2026-10-29, töö harus `claude/practical-knuth-zzw4kt`. Analüüsi käigus koodi ei muudetud. Hiljem parandati tellija otsusel üks viga (`indikaatorid.strength`, vt „Vajab täiendavat kontrolli“, punkt 3). Andmeid ei muudetud. |
 | Ulatus | Kirjeldatud on ainult kehtiv metoodika v2. v1 (`5aa4596`) ei ole kirjeldatud. |
 | Andmete päritolu | Kõik väärtused on **tuletatud näitajad** (derived): ELME teenusekihid (KAUR) ja baaskaart 2022 (5 m). Tegemist ei ole vaatlusandmetega. |
 | Püsilink | `https://github.com/TPiparKAUR/kaasavakasu/blob/b799458d61433b152becf2eeb2ee057de56b41cb/<fail>#L<rida>` |
@@ -1430,32 +1430,58 @@ Mediaan on väärtus, mis jagab pikslid kaheks võrdseks pooleks: pooled on sell
 
 ## Vajab täiendavat kontrolli
 
-1. **Keskmisepõhine paaritatud hinnang on v2-s endiselt arvutatud ja väljundis.** Asukoht: `stats.analyse_layer` (`stats.py:204-434`), `analysis.add_fdr` (`analysis.py:497-504`), `export.py:145-159, 263-269`.
-   * Veerud: `delta_m`, `rel_m`, `ci_m_*`, `p_m`, `q_m`, `oluline_m`, `kooskolas`.
-   * Kus need on: `paarid.parquet`, allalaaditav `tulemused_paarid.csv` ja `paarid.json`.
-   * Veebi hinnangud, `tendus.json`, Excel, `docs/tulemused.md` (v.a segumudeli tabel) ja tundlikkus kasutavad ainult `*_med` veerge, seega kokkulepe „plokkide mediaan, siis kaalutud keskmine“ on kõigis kasutajale nähtavates hinnangutes täidetud.
-   * Otsuste dokument ütleb, et „keskmine jääb andmetesse alles“. Allalaaditavas CSV-s on aga kaks paaritatud Δ-d kõrvuti. Otsustada: kas see on soovitud, või tuleb keskmisepõhised paaritatud veerud CSV-st eemaldada või selgelt märgistada.
-2. **`enough_m`, `enough_u` ja `n_strata` tulevad keskmisepõhisest funktsioonist.**
-   * Koodi järgi on pikslite valim, rühmitus ja `n_min` samad mis mediaanipõhises funktsioonis, seega peaksid ka loendused olema identsed. Piisavuse lippude kooskõla on andmetel kontrollitud: 0 lahknevust.
-   * `n_strata` (veebis „N paari“) numbrilist võrdsust mediaanipõhise stratumite arvuga ei saanud kontrollida, sest plokimediaanide fail `data/derived/plokid/*__blkmed.parquet` ei ole repos.
-   * Kontroll: käivitada `analyse_layer_median` koos `m_cnt` väljastamisega või võrrelda pivot-tabeli ridu otse.
-3. **Paaritatud suhtelise muutuse nimetaja.**
-   * Kood: `rel_m_med = Δ / |Σw·ma / Σw|`, ehk halvema seisundi stratumimediaanide kaalutud keskmise absoluutväärtus (`stats.py:688`).
-   * Veebi infotekst (`app.js:142`) ütleb: „Δ jagatud halvema seisundi mediaaniga (puudub, kui see mediaan on 0)“. See vastab paaritamata hinnangule (`rel_u_med = Δ / |median_a|`), kuid paaritatud hinnangul on nimetaja teine.
-   * `rel_m_med` puudub 987 real 4180-st. Neist ükski ei ole oluline.
-   * Kontrollida, kas infotekst vajab täpsustust.
-4. **`indikaatorid.strength(NaN)` annab „tugev“.** Asukoht: `indikaatorid.py:427-433`, kutsutud `kaasnev_export.py:264`.
-   * Kui hinnang on oluline, kuid `rel` on NaN (nimetaja 0), saaks tõendusbaas tugevuse „tugev“.
-   * Praegustes andmetes selliseid ridu ei ole (kontrollitud: 0). Tegemist on varjatud riskiga uue jooksu korral.
-5. **Ligikaudsed (histogrammipõhised) kvantiilid veebis.**
-   * Vaade „Kihtide ülevaade“ näitab „mediaan ≈“, mis on interpoleeritud jaotuse vahemikest (`app.js:747-753`). Ka järjestus „viltuse järgi“ (`app.js:778`) kasutab ligikaudset mediaani.
-   * Teenuse detaili jaotuskaardil on „25–75 % (ligikaudne)“ (`app.js:520-524`).
-   * Need on märgistatud ligikaudseks. Otsuste dokument ütleb aga: „Histogrammilist ega ligikaudset mediaani ei kasutata.“ Otsustada, kas see vaade on lubatud erand.
-6. **Tabelivaate CSV ei ole „täpsete väärtustega“.**
-   * Tekst `app.js:980` lubab täpseid väärtusi, kuid CSV tehakse brauseris JSON-ist, mis on ümardatud 5 olulise numbrini.
-   * Täpsed väärtused on failis `tulemused_paarid.csv`.
-   * Sama kehtib stsenaariumi „Mediaanide vahe hektari kohta“ kohta (`scenario.js:89`): vahe arvutatakse ümardatud mediaanidest, viga on kuni ±1 ühik 5. olulises numbris.
-7. **Toorandmetest sõltumatut ümberarvutust selles töös ei tehtud.**
-   * Repos ei ole rastreid (`data/cache/`) ega plokitasandi faile (`data/derived/plokid/`).
-   * Mediaanide numbriline õigsus tugineb testidele (läbitud) ja repo enda V8 kontrollile. V8-s jäid 6 suurima kihi ühiku mediaanid mälu tõttu kontrollimata: `erosioon_c_kg_ha_a`, `erosioon_p_eur_ha_a`, `erosioon_p_kg_ha_a`, `okosusteemide_tugi_tolmeldajatele`, `puitne_biomass_c_eur_ha_ets_borsihind_kogu_eesti_sum`, `puitne_biomass_c_t_ha_kogu_eesti_sum`.
-8. **Avaldatud leht.** Peaaadressil on endiselt v1 sait (commit `5aa4596`). See dokument kirjeldab v2 lehte (`…/v2/`), mis ehitatakse failidest `site_src/` ja `data/tulemused/` seisuga `b799458`.
+Staatus pärast tellija otsuseid (2026-10-29).
+
+1. **Keskmisepõhine paaritatud hinnang on väljundis mediaanipõhise kõrval. Otsus: lubatud, kui see ei lähe mediaanipõhisega segi.**
+   * Asukoht: `stats.analyse_layer` (`stats.py:204-434`), `analysis.add_fdr` (`analysis.py:497-504`), `export.py:145-159, 263-269`.
+   * Keskmisepõhised veerud (`delta_m`, `rel_m`, `ci_m_*`, `p_m`, `q_m`, `oluline_m`, `kooskolas`) on ainult **samades ridades** mediaanipõhiste `*_med` veergude kõrval:
+     * `paarid.parquet`;
+     * `tulemused_paarid.csv`;
+     * `paarid.json`, mida veeb ei kasuta.
+   * Nimekokkulepe on kirjas failis `docs/metoodika.md:119-120` („veerud `*_med`; sama arvutus keskmistega veerud ilma `_med` järelliiteta“).
+   * Eraldi kasutatakse keskmisepõhiseid tulemusi ainult kahes kohas ja mõlemad on selgelt märgistatud:
+     * segumudel: veebis „Võrdluseks: segumudel … keskmisel põhinev, uuriv“, `docs/tulemused.md` alapeatükk 3b;
+     * v1 → v2 võrdlus: „v2 keskmine → v2 mediaan“.
+   * Veebi hinnangud, tõendusbaas, Excel ja tundlikkus kasutavad ainult `*_med` veerge.
+   * Jääkrisk: `_m` tähendab „paaritatud“ (*matched*), mitte „mean“. Ilma veergude kirjelduseta võib CSV-i lugeja `oluline_m` ja `oluline_m_med` segi ajada. Leevendus oleks veergude legend README-s või CSV kõrval. Seda ei ole tehtud.
+2. **Suhteline muutus (Δ %) paaritatud hinnangul.** Δ ise vastab kokkuleppele: stratumite mediaanide vahed, millest võetakse kaalutud keskmine. Küsimus puudutab ainult protsenti, mida veebis Δ kõrval näidatakse.
+   * Kood (`stats.py:688`): `rel_m_med = Δ / |Σw·ma / Σw|`. Nimetaja on halvema seisundi **stratumimediaanide kaalutud keskmine**.
+   * Veebi infotekst (`app.js:142`): „Δ jagatud halvema seisundi mediaaniga“. Lugeja tõlgendab seda ühiku mediaanina (`median_a`), mida kohtspikker kõrval näitab.
+   * Näide: metsad, `c_tonn_per_ha_final_2022_10m`, vilets → hea. Δ = 38,9; veebis +4,3 %.
+     * Nimetaja koodis on 38,904 / 0,042599 = 913,3.
+     * Kohtspikri `median_a` on 688. Sellega jagades saaks lugeja +5,7 %.
+   * Kontrollida, kas infoteksti tuleb täpsustada. Arvutust ei ole muudetud.
+3. **`indikaatorid.strength(NaN)` andis „tugev“. PARANDATUD** harus `claude/practical-knuth-zzw4kt` (pärast `b799458`).
+   * Puuduv või NaN suhteline muutus annab nüüd tühja tugevuse.
+   * Lisatud on test `tests/test_kaasnev.py::test_strength_scale`.
+   * Praegustes andmetes selliseid ridu polnud (0), seega tulemused ei muutu.
+4. **Ligikaudsed (histogrammipõhised) kvantiilid veebis. Otsus: graafikutel lubatud, kui need on selgelt märgitud. Põhitabelites peab olema täpne mediaan.** Kontrollitud:
+   * täpne mediaan on kõigis põhitabelites:
+     * tulemustabel ja Excel (`kaasnev` → `median_table`);
+     * tabelivaade (`median_a`, `median_b`);
+     * teenuse detaili statistikaplokk;
+     * „Jaotuste võrdlus“ (mediaanide vahe, `exactMed`);
+     * profiil;
+     * algne seisundiklass;
+   * ligikaudseid väärtusi on ainult graafikutel ja need on märgitud:
+     * „Kihtide ülevaade“: „mediaan ≈“, kohtspikris „ligikaudne“, `app.js:747-753`;
+     * järjestus „viltuse järgi“, `app.js:778`;
+     * jaotuskaardi „25–75 % (ligikaudne)“, `app.js:520-524`.
+   * Avatud punkte ei ole.
+5. **Tabelivaate CSV ja stsenaariumi mediaanide vahe kasutavad ümardatud (5 olulist numbrit) väärtusi. Otsus: lubatud.**
+6. **Toorandmetest sõltumatut ümberarvutust selles töös ei tehtud.** Repos ei ole rastreid (`data/cache/`) ega plokitasandi faile (`data/derived/plokid/`). Mediaanide õigsus tugineb testidele (läbitud) ja repo enda kontrollile V8 (`scripts/valideeri_keskmised.py`, tulemus `validatsioon_keskmised.json`, uuesti ei käivitatud).
+   * V8 kontrollis paaritatud `delta_m_med` sõltumatult **kõigil 34 kihil**: 3952 hinnangut, 0 lahknevust.
+   * Ühik × seisundi (`lahtrid.median`, `median_nz`) ja tüüp × seisundi (`kaasnev_tuup_seisund.median`) mediaanid jäid kontrollimata kuuel kihil. Põhjus: nende sagedustabel ületas skripti piiri `--max-rows` (vaikimisi 60 000 000 rida).
+
+     | Kiht | Nimi | Ühik | Sagedustabeli read |
+     |---|---|---|---|
+     | `puitne_biomass_c_eur_ha_ets_borsihind_kogu_eesti_sum_2022_5m` | Metsa puitsesse biomassi seotud süsiniku varu rahaline väärtus (ETS börsihind) | EUR/ha | 700 434 005 |
+     | `okosusteemide_tugi_tolmeldajatele_2022_10m` | Ökosüsteemide tugi tolmeldajatele | indeks 0–1 | 392 762 219 |
+     | `erosioon_c_kg_ha_a_2022_10m` | Orgaanilise süsiniku ärakanne | kg/ha/a | 236 498 290 |
+     | `erosioon_p_kg_ha_a_2022_10m` | Fosfori ärakanne | kg/ha/a | 234 155 014 |
+     | `erosioon_p_eur_ha_a_2022_10m` | Fosfori mullaerosiooniga ärakande hind | EUR/ha/a | 234 154 813 |
+     | `puitne_biomass_c_t_ha_kogu_eesti_sum_2022_5m` | Metsa puitsesse biomassi seotud süsiniku varu | t C/ha | 76 152 073 |
+
+   * V8 ei kontrolli üheski kihis suurte ökosüsteemide mediaane (`kaasnev_suured.median`) ega algse seisundiklassi mediaane (`algklassid`). Neid katavad ainult üksustestid.
+   * Kontroll: käivitada masinas, kus on `data/derived/plokid/`, käsk `uv run python scripts/valideeri_keskmised.py --max-rows 800000000`. Mälu peab olema piisavalt.
+7. **Avaldatud leht.** Peaaadressil on endiselt v1 sait (commit `5aa4596`). See dokument kirjeldab v2 lehte (`…/v2/`), mis ehitatakse failidest `site_src/` ja `data/tulemused/` seisuga `b799458`.
