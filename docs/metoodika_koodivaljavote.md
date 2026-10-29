@@ -1,5 +1,8 @@
 # Metoodika koodiväljavõte: paaritatud hinnang ja mediaan (metoodika v2)
 
+<!-- Koodiplokid on projekti koodi sõna-sõnalised väljavõtted; ruff format ei tohi neid ümber vormindada. -->
+<!-- fmt:off -->
+
 | | |
 |---|---|
 | Analüüsitud kood | vaikeharu `claude/compassionate-babbage-mdfftn`, commit `b799458` (`b799458d61433b152becf2eeb2ee057de56b41cb`), metoodika v2 |
@@ -1487,3 +1490,5 @@ Staatus pärast tellija otsuseid (2026-10-29).
    * V8 ei kontrolli üheski kihis suurte ökosüsteemide mediaane (`kaasnev_suured.median`) ega algse seisundiklassi mediaane (`algklassid`). Neid katavad ainult üksustestid.
    * Kontroll: käivitada masinas, kus on `data/derived/plokid/`, käsk `uv run python scripts/valideeri_keskmised.py --max-rows 800000000`. Mälu peab olema piisavalt.
 7. **Avaldatud leht.** Peaaadressil on endiselt v1 sait (commit `5aa4596`). See dokument kirjeldab v2 lehte (`…/v2/`), mis ehitatakse failidest `site_src/` ja `data/tulemused/` seisuga `b799458`.
+
+<!-- fmt:on -->
