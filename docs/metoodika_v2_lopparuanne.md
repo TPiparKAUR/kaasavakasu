@@ -68,12 +68,16 @@ tööplaan ja seis: [metoodika_v2_tooplaan.md](metoodika_v2_tooplaan.md). Kõik 
 v1 on commit `5aa4596` (sildi tegemine ei olnud sessioonis lubatud; SHA on püsiv).
 
 1. **Enne liitmist**: haru lihtsalt mitte liita; vaikeharu ja peaaadressi sait jäävad v1-ks.
-2. **Pärast liitmist** (vaikeharus on v2 commit'id `20f04a6` (#1) ja tekstide parandus (#2)):
+2. **Pärast liitmist** (vaikeharus on v2 commit'id `20f04a6` (#1), tekstide parandus (#2) ning koodiväljavõte ja
+   väljundi parandused (#3, haru `claude/practical-knuth-zzw4kt`)):
    * **Üks samm, sõltumata v2 commit'ide arvust** (soovitatav): `git restore --source=5aa4596 --staged --worktree -- .`, seejärel
      `git commit -m "Restore methodology v1 (5aa4596)"` ja push. Kogu repo on siis täpselt v1 seisus, ka metoodika kirjeldus;
      v2-s lisatud failid eemaldatakse (kontrollitud: tulemus võrdub commit'iga `5aa4596`). Git'ist välja jäetud kohalikke
      andmeid (`data/derived`, `data/cache`) see ei muuda.
-   * Või commit'ide kaupa: `git revert` uuemast vanemani (#2 commit, seejärel `20f04a6`).
+   * Või commit'ide kaupa: `git revert` uuemast vanemani (#3 commit, #2 commit, seejärel `20f04a6`).
+   * **Ainult #3 tagasi** (v2 jääb, tagasi paranduste eelsesse v2 seisu `b799458`): `git revert <#3 squash-commit>` või
+     `git restore --source=b799458 --staged --worktree -- .` ja commit. #3 ei muuda arvutusi ega `data/tulemused` faile,
+     ainult veebi väljundit (`export.py`, `app.js`), `indikaatorid.strength`'i ja dokumente.
    * Ühe faili taastamine: `git checkout 5aa4596 -- <tee>`. v1 failide vaatamiseks ilma tagasiminekuta:
      `https://github.com/TPiparKAUR/kaasavakasu/blob/5aa4596/<tee>`.
 3. **Sait**: `pages.yml` ehitab peaaadressile niikuinii v1 (commit `5aa4596`, muutmata); v2 on `/v2/`. Pärast v1 taastamist kaob `/v2/` järgmise Pages-ehitusega (v1 töövoog seda ei ehita). Lõpliku vahetuse korral ehitada v2 otse `_site`-i ja eemaldada v1 sammud (kommentaar töövoos).

@@ -117,8 +117,20 @@ seisund ja plokk × ökosüsteem × seisund; kõik pikslid ja ainult nullist eri
 
 Seisundid on indekseeritud 0 = vilets, 1 = keskmine, 2 = hea; võrdlused (halvem → parem): vilets → keskmine,
 keskmine → hea, vilets → hea. **Δ = parema seisundi mediaan − halvema seisundi mediaan** (metoodika v2; veerud `*_med`).
-Sama arvutus keskmistega (veerud ilma `_med` järelliiteta) on tulemustes alles.
-Suhteline muutus = Δ / |halvema mediaan| (tühi, kui nimetaja ≈ 0).
+Sama arvutus keskmistega (veerud ilma `_med` järelliiteta) on alles ainult analüüsitabelis `data/tulemused/paarid.parquet`;
+veebi andmetes (`paarid.json`) ja allalaaditavas `tulemused_paarid.csv`-s on ainult mediaanipõhised hinnangud.
+
+**Suhteline muutus (Δ %).** Paaritatud hinnangul on Δ kaalutud plokimediaanide vahe, `Δ = M_b − M_a`, kus
+`M_s = Σ w·m_s / Σ w` (m_s = stratumi mediaan, w = n_a·n_b/(n_a+n_b)). Suhteline muutus on sama vahe protsendina
+halvema seisundi tasemest samades paarides: `Δ % = Δ / |M_a|` (= `M_b / M_a − 1`, kui `M_a > 0`). Lugeja ja nimetaja
+tulevad samadest stratumitest ja sama kaaluga, mistõttu suhe ei sega paaritatud hinnangusse paaritamata valimit.
+Paaritamata hinnangul on `Δ % = Δ / |halvema seisundi mediaan|`. Kui nimetaja ≈ 0 (sageli nullirohketel kihtidel),
+suhtelist muutust ei arvutata.
+
+**Allalaaditav `tulemused_paarid.csv`** (veerud `export.CSV_COLUMNS`): `paaritatud_*` = mediaanipõhine paaritatud
+hinnang (Δ, Δ %, 95 % CI, p, FDR q, olulisus, paaride ja klastrite arv); `paaritamata_*` = ühiku mediaanide vahe ja selle
+ebakindlus; `mediaan_halvem`/`mediaan_parem` = ühiku täpsed pikslimediaanid; `keskmine_halvem`/`keskmine_parem` =
+kirjeldavad keskmised (mitte hinnang); `oluline_molemal_hinnangul` = mõlemad olulised ja sama märgiga.
 
 Mediaan valiti, sest teenuste jaotused on tugevalt viltused ja nullirohked: keskmist määravad üksikud suured väärtused,
 mediaan näitab tüüpilist kohta. Kui teenus esineb vähem kui pooltel pikslitel, on mediaan 0; siis näidatakse lisaks
