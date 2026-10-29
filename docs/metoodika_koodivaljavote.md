@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Analüüsitud kood | vaikeharu `claude/compassionate-babbage-mdfftn`, commit `b799458` (`b799458d61433b152becf2eeb2ee057de56b41cb`), metoodika v2 |
-| Koostatud | 2026-10-29, töö harus `claude/practical-knuth-zzw4kt`. Analüüsi käigus koodi ei muudetud. Hiljem parandati tellija otsusel üks viga (`indikaatorid.strength`, vt „Vajab täiendavat kontrolli“, punkt 3). Andmeid ei muudetud. |
+| Koostatud | 2026-10-29, töö harus `claude/practical-knuth-zzw4kt`. Analüüsi käigus koodi ei muudetud. Hiljem tehti tellija otsusel kolm muudatust:<br>• `indikaatorid.strength` parandus (punkt 3);<br>• keskmisepõhised paaride hinnangud eemaldati veebi andmetest ja CSV-st ning CSV sai selged veerunimed (punkt 1);<br>• Δ % kirjeldus veebis ja dokumentatsioonis (punkt 2).<br>Arvutusi ja `data/tulemused` faile ei muudetud. Koodiplokid näitavad seisu `b799458`; hilisemad muudatused on kirjas peatükis „Vajab täiendavat kontrolli“. |
 | Ulatus | Kirjeldatud on ainult kehtiv metoodika v2. v1 (`5aa4596`) ei ole kirjeldatud. |
 | Andmete päritolu | Kõik väärtused on **tuletatud näitajad** (derived): ELME teenusekihid (KAUR) ja baaskaart 2022 (5 m). Tegemist ei ole vaatlusandmetega. |
 | Püsilink | `https://github.com/TPiparKAUR/kaasavakasu/blob/b799458d61433b152becf2eeb2ee057de56b41cb/<fail>#L<rida>` |
@@ -56,9 +56,9 @@ Ebakindlus arvutatakse 10 km klastrite bootstrapiga (B = 4000). Olulisuseks rake
 v2 koodis on alles ka **keskmisepõhine** variant, veerg `delta_m` (`stats.analyse_layer`). Selles on stratumi erinevus keskmiste vahe, kaal ja bootstrap on samad. See arvutatakse igal jooksul ja jõuab:
 
 * tabelisse `paarid.parquet`;
-* allalaaditavasse faili `tulemused_paarid.csv`;
-* faili `paarid.json`, kus veerud on olemas, kuid veebi hinnangud neid ei kasuta;
 * v1 → v2 võrdlusse (`vordlus.py`), kus see on teadlikult vahesamm „v2 keskmine“.
+
+Seisuga `b799458` jõudis see ka allalaaditavasse faili `tulemused_paarid.csv` ja faili `paarid.json`. Tellija otsusel on see nüüd mõlemast eemaldatud (vt „Vajab täiendavat kontrolli“, punkt 1).
 
 Mediaanipõhine Δ on kasutusel kõigis kohtades, kus kasutaja näeb hinnangut:
 
@@ -730,7 +730,7 @@ def _r(x: object) -> object:
         "oluline_m_med", "kooskolas_med",
 # ▸ Veebi andmefail (ümardatud).
 (out / "paarid.json").write_text(json.dumps(_rows(pr, cols_p), separators=(",", ":")), encoding="utf-8")
-# ▸ Allalaaditav CSV täpsete väärtustega (sisaldab ka keskmisepõhiseid veerge delta_m jt).
+# ▸ Allalaaditav CSV täpsete väärtustega (seisuga b799458 ka keskmisepõhised veerud; nüüd ainult mediaanipõhised, vt punkt 1).
 csv.write_csv(out / "tulemused_paarid.csv")
 ```
 
@@ -1432,25 +1432,27 @@ Mediaan on väärtus, mis jagab pikslid kaheks võrdseks pooleks: pooled on sell
 
 Staatus pärast tellija otsuseid (2026-10-29).
 
-1. **Keskmisepõhine paaritatud hinnang on väljundis mediaanipõhise kõrval. Otsus: lubatud, kui see ei lähe mediaanipõhisega segi.**
-   * Asukoht: `stats.analyse_layer` (`stats.py:204-434`), `analysis.add_fdr` (`analysis.py:497-504`), `export.py:145-159, 263-269`.
-   * Keskmisepõhised veerud (`delta_m`, `rel_m`, `ci_m_*`, `p_m`, `q_m`, `oluline_m`, `kooskolas`) on ainult **samades ridades** mediaanipõhiste `*_med` veergude kõrval:
-     * `paarid.parquet`;
-     * `tulemused_paarid.csv`;
-     * `paarid.json`, mida veeb ei kasuta.
-   * Nimekokkulepe on kirjas failis `docs/metoodika.md:119-120` („veerud `*_med`; sama arvutus keskmistega veerud ilma `_med` järelliiteta“).
-   * Eraldi kasutatakse keskmisepõhiseid tulemusi ainult kahes kohas ja mõlemad on selgelt märgistatud:
-     * segumudel: veebis „Võrdluseks: segumudel … keskmisel põhinev, uuriv“, `docs/tulemused.md` alapeatükk 3b;
-     * v1 → v2 võrdlus: „v2 keskmine → v2 mediaan“.
-   * Veebi hinnangud, tõendusbaas, Excel ja tundlikkus kasutavad ainult `*_med` veerge.
-   * Jääkrisk: `_m` tähendab „paaritatud“ (*matched*), mitte „mean“. Ilma veergude kirjelduseta võib CSV-i lugeja `oluline_m` ja `oluline_m_med` segi ajada. Leevendus oleks veergude legend README-s või CSV kõrval. Seda ei ole tehtud.
-2. **Suhteline muutus (Δ %) paaritatud hinnangul.** Δ ise vastab kokkuleppele: stratumite mediaanide vahed, millest võetakse kaalutud keskmine. Küsimus puudutab ainult protsenti, mida veebis Δ kõrval näidatakse.
-   * Kood (`stats.py:688`): `rel_m_med = Δ / |Σw·ma / Σw|`. Nimetaja on halvema seisundi **stratumimediaanide kaalutud keskmine**.
-   * Veebi infotekst (`app.js:142`): „Δ jagatud halvema seisundi mediaaniga“. Lugeja tõlgendab seda ühiku mediaanina (`median_a`), mida kohtspikker kõrval näitab.
-   * Näide: metsad, `c_tonn_per_ha_final_2022_10m`, vilets → hea. Δ = 38,9; veebis +4,3 %.
-     * Nimetaja koodis on 38,904 / 0,042599 = 913,3.
-     * Kohtspikri `median_a` on 688. Sellega jagades saaks lugeja +5,7 %.
-   * Kontrollida, kas infoteksti tuleb täpsustada. Arvutust ei ole muudetud.
+1. **Keskmisepõhised paaride hinnangud on veebist eemaldatud. TEHTUD** (`export.py`).
+   * Otsus: veebilehelt ei tohi saada alla laadida keskmisepõhiseid paare. Nimed `_m` / `_med` on segased.
+   * `paarid.json` sisaldab ainult mediaanipõhiseid hinnanguid. Ühtegi neist veergudest veeb ei kasutanud:
+     * eemaldatud on `delta_m`, `rel_m`, `ci_m_*`, `p_m`, `q_m`, `oluline_m`, `kooskolas`, `median_d_m`, `share_pos_m`, `wilcoxon_p`, `q_wilcoxon`;
+     * eemaldatud on ka keskmisepõhine paaritamata hinnang `delta_u`, `rel_u`, `ci_u_*`, `p_u`, `q_u`, `oluline_u`, `cliff_u`, `mw_p` ning `sd_a`, `sd_b`.
+   * `tulemused_paarid.csv` sisaldab ainult mediaanipõhiseid hinnanguid ja selgeid veerunimesid (`export.CSV_COLUMNS`). Näiteks:
+     * `paaritatud_delta`, `paaritatud_delta_suhteline`, `paaritatud_q_fdr`, `paaritatud_oluline`;
+     * `paaritamata_delta`;
+     * `mediaan_halvem`, `keskmine_halvem`.
+     Kirjeldus on failis `docs/metoodika.md`, § 5.
+   * Alles jäid seisundi **kirjeldavad keskmised** `keskmine_halvem` ja `keskmine_parem`. Need ei ole paari hinnang ja veeb näitab neid märgistatult. Stsenaarium kasutab neid pindalaga korrutamiseks.
+   * Keskmisepõhised paarid on alles ainult analüüsitabelis `data/tulemused/paarid.parquet`, mida veebist alla ei laadita.
+   * **Avatud:** võrdlusjaotise CSV `vordlus_paarid.csv` sisaldab v1 → v2 võrdluse jaoks keskmisepõhiseid paare. Veerunimed on seal selged (`delta_v1`, `delta_v2_mean`, `delta_v2_med`). Seda ei ole muudetud ja otsus on ootel.
+2. **Suhteline muutus (Δ %). Kirjeldus parandatud. TEHTUD** (`app.js`, `docs/metoodika.md`, `indikaatorid.py` kommentaar). Arvutust ei muudetud.
+   * Paaritatud Δ on kaalutud plokimediaanide vahe: `Δ = M_b − M_a`, kus `M_s = Σw·m_s/Σw`.
+   * Δ % on sama vahe protsendina halvema seisundi kaalutud plokimediaanist samades paarides: `Δ % = Δ/|M_a|`, ehk `M_b/M_a − 1`.
+   * Teaduslikult on see järjepidev valik, sest lugeja ja nimetaja tulevad samadest stratumitest ja sama kaaluga. Kaalusin kahte alternatiivi:
+     * Δ jagamine ühiku kõigi pikslite mediaaniga segaks paaritatud lugeja paaritamata nimetajaga;
+     * stratumite suhteliste muutuste keskmine oleks määramata, kui stratumi mediaan on 0, mis on nullirohketes kihtides sage.
+   * Veebi infotekstid kirjeldavad nüüd nimetajat täpselt. Paaritatud hinnangu kohtspikker näitab ka Δ % alust, `|Δ/Δ %|`. Näide: kahjuritõrje, rohumaad. Ühiku mediaanid on 0 → 0, kuid Δ % = −89,5 % alusest 0,121.
+   * **Avatud (ei ole parandatud, vajaks analüüsi uuesti käivitamist):** teenuse detaili suhtelise muutuse graafik (`app.js:853`) arvutab Δ % usaldusvahemiku kujul `rel·(CI/Δ)`. See käsitleb nimetajat konstandina ega arvesta nimetaja enda bootstrap-ebakindlust. Absoluutse Δ usaldusvahemik on korrektne. Täpse Δ % usaldusvahemiku saamiseks peaks `stats.analyse_layer_median` bootstrapima suhte `Σ W·M_wd / |Σ W·M_wa|` ja salvestama selle eraldi veergudena.
 3. **`indikaatorid.strength(NaN)` andis „tugev“. PARANDATUD** harus `claude/practical-knuth-zzw4kt` (pärast `b799458`).
    * Puuduv või NaN suhteline muutus annab nüüd tühja tugevuse.
    * Lisatud on test `tests/test_kaasnev.py::test_strength_scale`.
@@ -1469,7 +1471,7 @@ Staatus pärast tellija otsuseid (2026-10-29).
      * jaotuskaardi „25–75 % (ligikaudne)“, `app.js:520-524`.
    * Avatud punkte ei ole.
 5. **Tabelivaate CSV ja stsenaariumi mediaanide vahe kasutavad ümardatud (5 olulist numbrit) väärtusi. Otsus: lubatud.**
-6. **Toorandmetest sõltumatut ümberarvutust selles töös ei tehtud.** Repos ei ole rastreid (`data/cache/`) ega plokitasandi faile (`data/derived/plokid/`). Mediaanide õigsus tugineb testidele (läbitud) ja repo enda kontrollile V8 (`scripts/valideeri_keskmised.py`, tulemus `validatsioon_keskmised.json`, uuesti ei käivitatud).
+6. **Toorandmetest sõltumatut ümberarvutust selles töös ei tehtud. Otsus: jääb praegu lahendamata.** Repos ei ole rastreid (`data/cache/`) ega plokitasandi faile (`data/derived/plokid/`). Mediaanide õigsus tugineb testidele (läbitud) ja repo enda kontrollile V8 (`scripts/valideeri_keskmised.py`, tulemus `validatsioon_keskmised.json`, uuesti ei käivitatud).
    * V8 kontrollis paaritatud `delta_m_med` sõltumatult **kõigil 34 kihil**: 3952 hinnangut, 0 lahknevust.
    * Ühik × seisundi (`lahtrid.median`, `median_nz`) ja tüüp × seisundi (`kaasnev_tuup_seisund.median`) mediaanid jäid kontrollimata kuuel kihil. Põhjus: nende sagedustabel ületas skripti piiri `--max-rows` (vaikimisi 60 000 000 rida).
 

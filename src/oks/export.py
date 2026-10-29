@@ -16,6 +16,52 @@ from . import catalog, config, stats, vordlus
 #: Ümardus (olulisi numbreid) JSON-is; täpsed väärtused on CSV-s.
 SIG = 5
 
+#: Allalaaditava ``tulemused_paarid.csv`` veerud: ``paarid.parquet`` veerg -> CSV veerg (järjekord = CSV järjekord).
+#: Metoodika v2: ainult mediaanipõhised hinnangud; keskmisepõhised paaride hinnangud (``delta_m``, ``delta_u`` jt) ei
+#: ole CSV-s, et neid ei aetaks segi. ``keskmine_*`` on seisundi kirjeldav keskmine (stsenaariumi pindalaarvutus).
+CSV_COLUMNS: dict[str, str] = {
+    "teenus": "teenus",
+    "layer_id": "kiht_id",
+    "unit_level": "tase",
+    "unit_code": "uksuse_kood",
+    "uhik_nimi": "uksus",
+    "pair": "seisundipaar",
+    "res_m": "arvutuse_lahutus_m",
+    "n_a": "pikslid_halvem",
+    "n_b": "pikslid_parem",
+    "median_a": "mediaan_halvem",
+    "median_b": "mediaan_parem",
+    "mean_a": "keskmine_halvem",
+    "mean_b": "keskmine_parem",
+    "delta_m_med": "paaritatud_delta",
+    "rel_m_med": "paaritatud_delta_suhteline",
+    "ci_m_med_lo": "paaritatud_ci95_alumine",
+    "ci_m_med_hi": "paaritatud_ci95_ulemine",
+    "p_m_med": "paaritatud_p",
+    "q_m_med": "paaritatud_q_fdr",
+    "oluline_m_med": "paaritatud_oluline",
+    "enough_m": "paaritatud_andmeid_piisavalt",
+    "n_strata": "paaritatud_paaride_arv",
+    "n_clusters_m": "paaritatud_klastrite_arv",
+    "median_d_m_med": "paaritatud_paarierinevuste_mediaan",
+    "share_pos_m_med": "paaritatud_positiivsete_paaride_osa",
+    "wilcoxon_p_med": "paaritatud_wilcoxon_p",
+    "q_wilcoxon_med": "paaritatud_wilcoxon_q_fdr",
+    "delta_u_med": "paaritamata_delta",
+    "rel_u_med": "paaritamata_delta_suhteline",
+    "ci_u_med_lo": "paaritamata_ci95_alumine",
+    "ci_u_med_hi": "paaritamata_ci95_ulemine",
+    "p_u_med": "paaritamata_p",
+    "q_u_med": "paaritamata_q_fdr",
+    "oluline_u_med": "paaritamata_oluline",
+    "enough_u": "paaritamata_andmeid_piisavalt",
+    "blocks_a": "paaritamata_plokke_halvem",
+    "blocks_b": "paaritamata_plokke_parem",
+    "cliff_u_med": "paaritamata_cliffi_delta_plokid",
+    "mw_p_med": "paaritamata_mann_whitney_p_plokid",
+    "kooskolas_med": "oluline_molemal_hinnangul",
+}
+
 
 def _r(x: object) -> object:
     """Ümarda ujukomaarv ``SIG`` olulise numbrini; ``NaN``/``inf`` -> ``None``."""
@@ -119,6 +165,8 @@ def build_data(results: Path, out: Path, sensitivity: Path | None = None) -> dic
     cl = classes.select(
         "idx", "kood", "tuup", "seisund_algne", "seisund", "alam_kood", "okosusteem_kood"
     ).sort("idx")
+    # metoodika v2: veebi andmetes on ainult mediaanipõhised hinnangud; keskmisepõhised hinnangud (delta_m, delta_u jt)
+    # jäävad ainult ``paarid.parquet``-i. ``mean_a``/``mean_b`` on seisundi kirjeldav keskmine, mitte hinnang.
     cols_p = [
         "layer_id",
         "unit_level",
@@ -128,36 +176,12 @@ def build_data(results: Path, out: Path, sensitivity: Path | None = None) -> dic
         "n_b",
         "mean_a",
         "mean_b",
-        "sd_a",
-        "sd_b",
-        "delta_u",
-        "rel_u",
-        "ci_u_lo",
-        "ci_u_hi",
-        "p_u",
-        "q_u",
-        "cliff_u",
-        "mw_p",
         "blocks_a",
         "blocks_b",
         "n_strata",
         "n_clusters_m",
-        "delta_m",
-        "rel_m",
-        "ci_m_lo",
-        "ci_m_hi",
-        "p_m",
-        "q_m",
-        "median_d_m",
-        "share_pos_m",
-        "wilcoxon_p",
-        "q_wilcoxon",
         "enough_m",
         "enough_u",
-        "oluline_m",
-        "oluline_u",
-        "kooskolas",
-        # metoodika v2: mediaanipõhised hinnangud (veebilehe põhihinnang)
         "median_a",
         "median_b",
         "delta_u_med",
@@ -257,7 +281,7 @@ def build_data(results: Path, out: Path, sensitivity: Path | None = None) -> dic
             json.dumps(pl.read_csv(sensitivity).to_dicts(), ensure_ascii=False, separators=(",", ":")),
             encoding="utf-8",
         )
-    # allalaaditav täpse väärtustega CSV (inimloetavate nimedega)
+    # allalaaditav täpse väärtustega CSV: ainult mediaanipõhised hinnangud, selgete veerunimedega (CSV_COLUMNS)
     names = {lid: t["nimi"] for lid, t in zip(layer_ids, teenused, strict=True)}
     unames = {(r["unit_level"], r["unit_code"]): r["nimi"] for r in units.iter_rows(named=True)}
     csv = paarid.with_columns(
@@ -266,7 +290,8 @@ def build_data(results: Path, out: Path, sensitivity: Path | None = None) -> dic
         .map_elements(lambda s: unames[(s["unit_level"], s["unit_code"])], return_dtype=pl.String)
         .alias("uhik_nimi"),
     )
-    csv.write_csv(out / "tulemused_paarid.csv")
+    keep = [c for c in CSV_COLUMNS if c in csv.columns]
+    csv.select(keep).rename({c: CSV_COLUMNS[c] for c in keep}).write_csv(out / "tulemused_paarid.csv")
     return meta
 
 

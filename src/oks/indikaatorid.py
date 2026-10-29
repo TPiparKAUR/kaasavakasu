@@ -21,7 +21,8 @@ PROVISIONING = "Varustav"
 REGULATING = "Reguleeriv ja säilitav"
 CULTURAL = "Kultuuriline"
 
-#: Mõju tugevuse ettepanek suhtelise muutuse (|Δ| / halvema seisundi mediaan; metoodika v2) järgi; lävendid on
+#: Mõju tugevuse ettepanek suhtelise muutuse |Δ %| järgi (metoodika v2: paaritatud hinnangul Δ / halvema seisundi
+#: plokimediaanide kaalutud keskmine samades paarides, paaritamata hinnangul Δ / halvema seisundi mediaan); lävendid on
 #: kokkuleppeline ettepanek, mitte andmetest tulenev piir.
 STRENGTH_BREAKS: tuple[float, float] = (0.10, 0.50)
 

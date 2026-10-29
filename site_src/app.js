@@ -139,10 +139,10 @@
     grupp: ['Teenusegrupp', ['ELME kihitabeli teemarühm (nt Loodusannid, Puhverdavad teenused). Piirab, milliseid teenuseid näidatakse.']],
     omadus: ['Omadus', ['biofüüsikaline: väärtus füüsikalistes ühikutes (nt t C/ha, kg/ha).', 'rahaline: rahaline hinnang (EUR/ha).', 'muu: indeks või skoor (nt elupaikade säilitamine 0–10).', 'Allikas: ametlik kihitabel (veerg properties).']],
     teenus: ['Teenus', ['Valik analüüsitud teenustest (kihitabelis eval = TRUE). Mõnel teenusel on tulemus ainult teatud ökosüsteemides (nt metsa puitse biomassi süsinik ainult metsades).', 'Ühik on kihitabelist; kus tabel ühikut ei nimeta, on see tühi.']],
-    paar: ['Seisundipaar', ['Mida võrreldakse: halvem → parem seisund. Muutus Δ = parema seisundi mediaan − halvema seisundi mediaan; suhteline muutus = Δ jagatud halvema seisundi mediaaniga (puudub, kui see mediaan on 0).', 'Seisundid on ühtlustatud kolmeks klassiks (vilets, keskmine, hea); need tulevad ökosüsteemiti erinevatest algklassidest A–F.', 'Kuumkaart kasutab valitud paari (valikul „kõik” paari vilets → hea); tabel näitab valitud paari või kõiki kolme; profiil näitab alati paari vilets → hea.']],
+    paar: ['Seisundipaar', ['Mida võrreldakse: halvem → parem seisund. Muutus Δ = parema seisundi mediaan − halvema seisundi mediaan; suhteline muutus (Δ %) = Δ protsendina halvema seisundi tasemest: paaritatud hinnangul on tase halvema seisundi plokimediaanide kaalutud keskmine samades paarides ja sama kaaluga kui Δ-l (Δ % = parema ja halvema seisundi kaalutud plokimediaanide suhe − 1), paaritamata hinnangul halvema seisundi mediaan. Puudub, kui see tase on 0.', 'Seisundid on ühtlustatud kolmeks klassiks (vilets, keskmine, hea); need tulevad ökosüsteemiti erinevatest algklassidest A–F.', 'Kuumkaart kasutab valitud paari (valikul „kõik” paari vilets → hea); tabel näitab valitud paari või kõiki kolme; profiil näitab alati paari vilets → hea.']],
     hinnang: ['Hinnang: paaritatud ja paaritamata', ['Paaritatud (soovitatav): võrdleb seisundite mediaane samas 1 km plokis ja samas alamökosüsteemis (kummaski vähemalt 1 ha). Nii ei sega asukoht (mullastik, kliima) ega alamökosüsteemide erinev koosseis. Ökosüsteemi tulemus on kõigi selliste plokkide erinevuste kaalutud keskmine.', 'Paaritamata: kõigi pikslite mediaanide vahe valitud seisundite vahel. Kasutab kõiki andmeid, kuid kui nt „hea” esineb teistes piirkondades või alamökosüsteemides kui „vilets”, läheb see erinevus muutusesse (ökosüsteemi tasemel on see toorhinnang).', 'Kui hinnangud lähevad lahku (eriti vastupidise märgiga), mõjutab tulemust asukoht või koosseis.']],
     olulisus: ['Olulisus', ['oluline: FDR-korrigeeritud q < 0,05. Olulisus tuleb 10 × 10 km klastrite bootstrapist (arvestab ruumilist sõltuvust) ja Benjamini–Hochbergi mitmese testimise parandusest. Hinnang vajab vähemalt 20 paari (paaritamata: plokki) ja 5 klastrit.', 'oluline mõlemal hinnangul: nii paaritatud kui paaritamata hinnang on olulised ja sama märgiga.', 'Statistiline olulisus ei tähenda, et muutus on suur; suuruse piiramiseks kasuta filtrit „Min |muutus|”.']],
-    minrel: ['Min |muutus|', ['Peidab hinnangud, mille suhteline muutus (% halvema seisundi mediaanist) on absoluutväärtuselt valitud lävest väiksem. 0 % = kõik. Praktilise tähtsuse piiri valid sina; seda ei ole ette seatud.']],
+    minrel: ['Min |muutus|', ['Peidab hinnangud, mille suhteline muutus (Δ %, vt „Seisundipaar”) on absoluutväärtuselt valitud lävest väiksem. 0 % = kõik. Praktilise tähtsuse piiri valid sina; seda ei ole ette seatud.']],
   };
   let infoKey = null;
   function renderInfo() {
@@ -266,7 +266,7 @@
     }
     const card = h('section', { class: 'card' }, root);
     h('h2', {}, card, `Seisundi muutus: ${D.meta.paarid[pair].replace('→', ' → ')}`);
-    h('p', { class: 'sub' }, card, `Värv = teenuse suhteline muutus (parem − halvem seisund, % halvema seisundi mediaanist), hinnang: ${S.est === 'm' ? 'paaritatud (sama 1 km plokk ja alamökosüsteem)' : 'paaritamata (kõik pikslid)'}. Täisvärv = statistiliselt oluline (FDR q < 0,05), kahvatu = ei ole oluline, tühi = andmeid pole või filter välistab. Klõpsa lahtrit või teenuse nime, et avada detail.`);
+    h('p', { class: 'sub' }, card, `Värv = teenuse suhteline muutus (parem − halvem seisund, % halvema seisundi ${S.est === 'm' ? 'plokimediaanide kaalutud keskmisest samades paarides' : 'mediaanist'}), hinnang: ${S.est === 'm' ? 'paaritatud (sama 1 km plokk ja alamökosüsteem)' : 'paaritamata (kõik pikslid)'}. Täisvärv = statistiliselt oluline (FDR q < 0,05), kahvatu = ei ole oluline, tühi = andmeid pole või filter välistab. Klõpsa lahtrit või teenuse nime, et avada detail.`);
     const ht = h('div', { class: 'tools' }, card);
     h('span', { class: 'tl' }, ht, 'Lahtris');
     const hs = h('div', { class: 'seg', role: 'group', 'aria-label': 'Mida lahtris näidata' }, ht);
@@ -307,7 +307,7 @@
         const ok = c && e.ok && passes(c);
         let fill = 'none', op = 1, txt = '', tc = cssVar('--ink-2');
         if (ok) {
-          // kui halvema seisundi mediaan on 0, suhtelist muutust ei ole: värv näitab siis ainult suunda
+          // kui suhtelise muutuse nimetaja (halvema seisundi tase) on 0, suhtelist muutust ei ole: värv näitab siis ainult suunda
           const hasRel = has(e.rel), cr = hasRel ? e.rel : Math.sign(e.d) * 0.5;
           const d = divColor(cr, e.sig); fill = d.fill; op = d.op;
           txt = S.hval === 'abs' ? sgn(e.d) : hasRel ? pct(e.rel) : 'Δ';
@@ -326,7 +326,7 @@
       y += rowH;
     }
     const lg = h('ul', { class: 'legend' }, card);
-    const li1 = h('li', {}, lg); h('span', { class: 'ramp' }, li1); h('span', {}, li1, '−100 % … 0 … +100 % (oranž = väärtus väheneb, sinine = väärtus kasvab; järsemad muutused küllastuvad). „Δ“: halvema seisundi mediaan on 0, värv näitab ainult suunda');
+    const li1 = h('li', {}, lg); h('span', { class: 'ramp' }, li1); h('span', {}, li1, '−100 % … 0 … +100 % (oranž = väärtus väheneb, sinine = väärtus kasvab; järsemad muutused küllastuvad). „Δ“: halvema seisundi tase (Δ % nimetaja) on 0, värv näitab ainult suunda');
     const li3 = h('li', {}, lg); h('span', {}, li3, '‡ = madalama lahutusvõimega kiht (930 m / 1 km), viidud 10 m lahutusvõimele: seisundite erinevus tuleb ainult algsete ruutude vahelistest erinevustest');
     const li5 = h('li', {}, lg); h('span', {}, li5, '§ = erandkiht: kihi puuduvad andmed on valimist välja jäetud (mitte loetud nulliks)');
     const li4 = h('li', {}, lg); h('span', {}, li4, '† = seos seisundiga on osaliselt definitsiooniline (kihi väärtus on tuletatud seisundiklassist; vt teenuse detail)');
@@ -342,6 +342,8 @@
     tl(t, 'm', `95 % CI: ${sgn(e.lo)} … ${sgn(e.hi)}`);
     tl(t, 'm', `${S.est === 'm' ? 'paaritatud' : 'paaritamata'} · p ${pfmt(e.p)} · q ${pfmt(e.q)} · ${e.sig ? 'oluline' : 'ei ole oluline'}`);
     tl(t, 'm', `mediaan ${fmt(c.median_a)} → ${fmt(c.median_b)} · keskmine ${fmt(c.mean_a)} → ${fmt(c.mean_b)}`);
+    // paaritatud Δ % nimetaja = |Δ / Δ %| (halvema seisundi plokimediaanide kaalutud keskmine paarides), mitte ühiku mediaan
+    if (S.est === 'm' && has(e.rel) && e.rel !== 0) tl(t, 'm', `Δ % alus: halvema seisundi plokimediaanide kaalutud keskmine paarides ${fmt(Math.abs(e.d / e.rel))} ${T.uhik || ''}`);
     if (S.est === 'm') tl(t, 'm', `${nf(0).format(c.n_strata)} paari (plokk × alamökosüsteem), ${c.n_clusters_m} klastrit`);
     else tl(t, 'm', `${nf(0).format(c.blocks_a)} / ${nf(0).format(c.blocks_b)} plokki`);
     if (eta) tl(t, 'm', `η² (klass → väärtus): ${nf(2).format(eta[0])}`);
@@ -1031,7 +1033,7 @@
     P('Valim: kihi puuduvad andmed (NoData) loetakse nulliks, kui all on baaskaardi ökosüsteem; ka teenuse kaardi ulatusest väljapoole jäävad baaskaardi pikslid on nullid. Erandid (§): mustikate ja pohlade ning kasemahla kihid, kus NoData tähendab puuduvat hinnangut ja jäetakse välja. Põllumassiivide kihtides on põldudest väljas olev ala 0, puuduv väärtus ja −1 on 0, kattuvate polügoonide korral võetakse suurim väärtus.');
     P('Märked: „ei paku“ = nullist erinevaid piksleid alla 1 % kehtivatest (lähtekasu „väga-väga vähe“; lävi on meie valik); „–“ = kehtivaid piksleid alla 5 % klassist; kaldkiri ja kollane = osaline kate; † definitsiooniline seos seisundiga; ‡ madalama lahutusvõimega kiht; § erandkiht.');
     h('h3', {}, card, 'Hinnang ja olulisus');
-    P(`Muutus Δ = parema seisundi mediaan − halvema seisundi mediaan. Paaritatud hinnang võrdleb seisundite mediaane samas 1 km plokis ja samas alamökosüsteemis (kummaski vähemalt ${p.min_area_ha} ha) ning koondab plokkide erinevused kaalutud keskmisena (kaal n_a·n_b/(n_a+n_b)). See kontrollib asukoha ja alamökosüsteemi koosseisu mõju. Paaritamata hinnang on kõigi pikslite mediaanide vahe.`);
+    P(`Muutus Δ = parema seisundi mediaan − halvema seisundi mediaan. Paaritatud hinnang võrdleb seisundite mediaane samas 1 km plokis ja samas alamökosüsteemis (kummaski vähemalt ${p.min_area_ha} ha) ning koondab plokkide erinevused kaalutud keskmisena (kaal n_a·n_b/(n_a+n_b)). See kontrollib asukoha ja alamökosüsteemi koosseisu mõju. Paaritamata hinnang on kõigi pikslite mediaanide vahe. Suhteline muutus (Δ %): paaritatud hinnangul Δ jagatud halvema seisundi plokimediaanide kaalutud keskmisega samades paarides ja sama kaaluga, st parema ja halvema seisundi kaalutud plokimediaanide suhe miinus 1 (lugeja ja nimetaja tulevad samadest paaridest); paaritamata hinnangul Δ jagatud halvema seisundi mediaaniga. Kui nimetaja on 0, suhtelist muutust ei ole.`);
     P(`Olulisus: ${nf(0).format(p.cluster_blocks)} × ${nf(0).format(p.cluster_blocks)} km klastrite bootstrap (${nf(0).format(p.n_boot)} kordust) arvestab ruumilist autokorrelatsiooni; kahepoolsed p-väärtused korrigeeritakse Benjamini–Hochbergi meetodiga (FDR) eraldi ökosüsteemi ja alamökosüsteemi taseme jaoks (α = ${p.alpha}). Hinnang on „oluline”, kui q < ${p.alpha} ja vähemalt ${p.min_strata} paari ning ${p.min_clusters} klastrit.`);
     h('h3', {}, card, 'Piirangud, mida tuleb arvestada');
     const ul = h('ul', {}, card);
