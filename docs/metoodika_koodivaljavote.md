@@ -1444,7 +1444,7 @@ Staatus pärast tellija otsuseid (2026-10-29).
      Kirjeldus on failis `docs/metoodika.md`, § 5.
    * Alles jäid seisundi **kirjeldavad keskmised** `keskmine_halvem` ja `keskmine_parem`. Need ei ole paari hinnang ja veeb näitab neid märgistatult. Stsenaarium kasutab neid pindalaga korrutamiseks.
    * Keskmisepõhised paarid on alles ainult analüüsitabelis `data/tulemused/paarid.parquet`, mida veebist alla ei laadita.
-   * **Avatud:** võrdlusjaotise CSV `vordlus_paarid.csv` sisaldab v1 → v2 võrdluse jaoks keskmisepõhiseid paare. Veerunimed on seal selged (`delta_v1`, `delta_v2_mean`, `delta_v2_med`). Seda ei ole muudetud ja otsus on ootel.
+   * **Erand, otsus 2026-10-29:** metoodika võrdluse leht (v1 → v2) jääb muutmata. Võrdluse jaoks on keskmisepõhised paaritatud hinnangud seal vajalikud: `vordlus.json` ja allalaaditav `vordlus_paarid.csv`, veerud `delta_v1`, `delta_v2_mean`, `delta_v2_med`. Ehitatud saidi `vordlus_paarid.csv` on baitide kaupa identne failiga `data/tulemused/vordlus_paarid.csv`.
 2. **Suhteline muutus (Δ %). Kirjeldus parandatud. TEHTUD** (`app.js`, `docs/metoodika.md`, `indikaatorid.py` kommentaar). Arvutust ei muudetud.
    * Paaritatud Δ on kaalutud plokimediaanide vahe: `Δ = M_b − M_a`, kus `M_s = Σw·m_s/Σw`.
    * Δ % on sama vahe protsendina halvema seisundi kaalutud plokimediaanist samades paarides: `Δ % = Δ/|M_a|`, ehk `M_b/M_a − 1`.
