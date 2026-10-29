@@ -24,20 +24,21 @@ jobs:
         with:
           fetch-depth: 0 # v1 leht ehitatakse commit'ist V1_COMMIT
       - uses: astral-sh/setup-uv@v5
-      # Metoodika v1 (keskmised) jääb peaaadressile, v2 (mediaanid) on aadressil /v2/.
-      # Vahetamiseks: ehita v2 otse _site-i ja eemalda v1 sammud.
+      # Metoodika v1 (keskmised) jääb peaaadressile muutmata kujul, v2 (mediaanid) on aadressil /v2/ (ainult otselink,
+      # v1 lehel viidet ei ole; v2 lehed on märgitud noindex). Vahetamiseks: ehita v2 otse _site-i ja eemalda v1 samm.
       - name: Ehita v1 leht (commit V1_COMMIT) peaaadressile
         env:
           V1_COMMIT: 5aa4596
         run: |
           git worktree add ../v1 "$V1_COMMIT"
           (cd ../v1 && uv sync --frozen && uv run python -m oks site --out "$GITHUB_WORKSPACE/_site")
-          for f in index.html oks-seisund.html; do
-            link=v2/; [ "$f" = oks-seisund.html ] && link=v2/oks-seisund.html
-            sed -i "0,/<body>/s||<body>\n<p style=\"margin:0;padding:8px 16px;background:#fff4d6;color:#3a2f00;font:14px/1.4 system-ui,sans-serif\">Vana metoodika (v1, keskmised). Uus metoodika (v2, mediaanid): <a href=\"$link\">ava v2</a></p>|" "_site/$f"
-          done
       - run: uv sync --frozen
       - run: uv run python -m oks site --out _site/v2
+      - name: v2 lehed otsingumootoritest välja
+        run: |
+          for f in _site/v2/*.html; do
+            sed -i '0,/<head>/s||<head>\n<meta name="robots" content="noindex, nofollow">|' "$f"
+          done
       - name: Kontrolli, et leht ja andmed on olemas
         run: |
           for d in _site _site/v2; do
@@ -45,7 +46,8 @@ jobs:
             test -s $d/data/paarid.json
             test -s $d/oks-seisund.html
           done
-          grep -q 'ava v2' _site/index.html
+          grep -q 'name="robots" content="noindex' _site/v2/index.html
+          ! grep -q 'name="robots"' _site/index.html
       - if: github.ref_name == github.event.repository.default_branch
         uses: actions/configure-pages@v5
       - if: github.ref_name == github.event.repository.default_branch

@@ -48,7 +48,7 @@ Selles dokumendis on kirjas, mida ja miks muudeti, kui tulemustabelites ja seisu
 
 ## Veebileht
 
-* **v1 sait** jääb esialgu peaaadressile ja see ehitatakse commit'ist `5aa4596`. **v2 sait** avaldatakse aadressil `/v2/`. Pärast kinnitamist vahetatakse: v2 läheb peaaadressile ja v1 aadressile `/v1/`.
+* **v1 sait** jääb esialgu peaaadressile muutmata kujul ja see ehitatakse commit'ist `5aa4596`. **v2 sait** avaldatakse aadressil `/v2/` ainult otselingiga (v1 lehel viidet ei ole, `noindex`); avalikkuse tase on sama mis v1-l (2026-10-29 otsus). Pärast kinnitamist vahetatakse: v2 läheb peaaadressile ja v1 aadressile `/v1/`.
 * Võrdlusjaotis näitab muutust kahes osas: valimireeglite mõju ja statistiku vahetuse mõju.
 * Kuumkaardil saab suhtelise muutuse asemel vaadata muutust kihi ühikutes (biofüüsikalised või rahalised).
 

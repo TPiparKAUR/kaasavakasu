@@ -35,7 +35,7 @@ koostab kvalitatiivse osa raamistiku (`docs/lahteulesanne.md`: nõuded, seis, kr
 ## GitHub Pages
 
 Töövoog `.github/workflows/pages.yml` ehitab saidi igal pushil ja avaldab selle **repo vaikeharust**. Peaaadressil on metoodika v1 leht
-(ehitatud commit'ist `5aa4596`, ülal märge ja link v2-le), metoodika v2 leht on aadressil `…/v2/`.
+(ehitatud commit'ist `5aa4596`, muutmata kujul), metoodika v2 leht on aadressil `…/v2/` (ainult otselink, v1 lehel viidet ei ole; otsingumootoritele `noindex`). Mõlemad on sama avalikud kui repo.
 
 1. Repo **Settings → Pages → Build and deployment → Source: GitHub Actions** (ühekordne).
 2. Push vaikeharusse või **Actions → Veebileht → Run workflow**. Valmis aadress: `https://<kasutaja>.github.io/<repo-nimi>/` (praegu repo `kaasavakasu`: `https://tpiparkaur.github.io/kaasavakasu/`).

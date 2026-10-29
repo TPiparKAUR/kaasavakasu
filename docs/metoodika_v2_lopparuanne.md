@@ -15,7 +15,7 @@ tööplaan ja seis: [metoodika_v2_tooplaan.md](metoodika_v2_tooplaan.md). Kõik 
 | Skriptid | `valideeri_keskmised.py`, `valideeri_veeb.py` (v2 kontrollid); uus `vordle_metoodikad.py`; `naide_paaritatud.py`, `valideeri_baaskaart.py` ainult `ruff format` (CI vormingukontroll oli v1-s punane) |
 | Dokumendid | `README.md`, `docs/metoodika.md`, `docs/keskmiste_arvutus.md` (v1 märge), `docs/tulemused.md`, `docs/andmekataloog.md` (genereeritud); uued `docs/metoodika_v2_otsused.md`, `metoodika_v2_tooplaan.md`, see aruanne |
 | Andmed | `data/teenused.csv` (lammi ühik), `data/tulemused/*` (v2 tulemused, uued `algklassid`, `paarid_segumudel`, `lahtrid_segumudel`, `vordlus_*.csv`) |
-| Avaldamine | `.github/workflows/pages.yml` (v1 peaaadressil, v2 `/v2/`) |
+| Avaldamine | `.github/workflows/pages.yml` (v1 peaaadressil muutmata, v2 `/v2/` ainult otselingiga, `noindex`) |
 
 ## 2. Koodimuudatused faili kaupa
 
@@ -69,7 +69,7 @@ v1 on commit `5aa4596` (sildi tegemine ei olnud sessioonis lubatud; SHA on püsi
 
 1. **Enne liitmist**: haru lihtsalt mitte liita; vaikeharu ja peaaadressi sait jäävad v1-ks.
 2. **Pärast squash-liitmist**: `git revert <squash-commit>` vaikeharus (üks commit, taastab kõik muudetud failid v1 seisu). Ühe faili taastamine: `git checkout 5aa4596 -- <tee>`.
-3. **Sait**: `pages.yml` ehitab peaaadressile niikuinii v1 (commit `5aa4596`); v2 on `/v2/`. Lõpliku vahetuse korral ehitada v2 otse `_site`-i ja eemaldada v1 sammud (kommentaar töövoos).
+3. **Sait**: `pages.yml` ehitab peaaadressile niikuinii v1 (commit `5aa4596`, muutmata); v2 on `/v2/`. Pärast `git revert`-i kaob `/v2/` järgmise Pages-ehitusega. Lõpliku vahetuse korral ehitada v2 otse `_site`-i ja eemaldada v1 sammud (kommentaar töövoos).
 4. **Andmed**: v1 tulemustabelid (`data/tulemused`) on git'is commit'is `5aa4596`, seega v1 sait ehitub ilma ümberarvutuseta. Kohalikud plokitabelid (`data/derived/plokid`, ei ole git'is) on v2 reeglitega; v1 koodi täielikuks taasarvutuseks käivitada `oks aggregate --force` ja `oks fields --force` (~2 h).
 5. **Analüüsi vahemälu** `data/cache/analyys` (ei ole git'is) tuleb koodi muutmisel kustutada.
 
