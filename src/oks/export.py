@@ -11,7 +11,7 @@ from typing import Any
 
 import polars as pl
 
-from . import catalog, config, stats, vordlus
+from . import catalog, config, ruhmad, stats, vordlus
 
 #: Ümardus (olulisi numbreid) JSON-is; täpsed väärtused on CSV-s.
 SIG = 5
@@ -61,6 +61,10 @@ CSV_COLUMNS: dict[str, str] = {
     "mw_p_med": "paaritamata_mann_whitney_p_plokid",
     "kooskolas_med": "oluline_molemal_hinnangul",
 }
+
+
+#: ``unit_level`` -> täisarv ``paarid.json``-is (metoodika v3: lisandus tase ``ruhm``).
+UNIT_LEVELS: dict[str, int] = {"okosusteem": 0, "alam": 1, ruhmad.LEVEL: 2}
 
 
 def _r(x: object) -> object:
@@ -209,7 +213,7 @@ def build_data(results: Path, out: Path, sensitivity: Path | None = None) -> dic
         pl.col("pair")
         .replace_strict({n: i for i, n in enumerate(stats.PAIR_NAMES)}, return_dtype=pl.Int64)
         .alias("pair"),
-    ).with_columns(pl.col("unit_level").replace_strict({"okosusteem": 0, "alam": 1}, return_dtype=pl.Int64))
+    ).with_columns(pl.col("unit_level").replace_strict(UNIT_LEVELS, return_dtype=pl.Int64))
     lr = lahtrid.with_columns(
         pl.col("layer_id").replace_strict(li, return_dtype=pl.Int64),
         pl.struct("unit_level", "unit_code")
@@ -247,6 +251,11 @@ def build_data(results: Path, out: Path, sensitivity: Path | None = None) -> dic
     params = pl.read_csv(results / "parameetrid.csv").row(0, named=True)
     meta = {
         "koostatud": date.today().isoformat(),
+        "metoodika": config.METHOD_VERSION,
+        "ruhmad": {
+            str(g.code): {"nimi": g.name, "eco": g.eco, "alam": list(g.alam_codes)}
+            for g in ruhmad.GROUPS.values()
+        },
         "parameetrid": params,
         "seisundid": list(stats.STATES),
         "paarid": list(stats.PAIR_NAMES),

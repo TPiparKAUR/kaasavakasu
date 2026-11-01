@@ -85,6 +85,9 @@
     const seg = new Map((raw.segumudel || []).map(([l, u, p, d, lo, hi, q]) => [`${l}|${u}|${p}`, { d, lo, hi, q }]));
     D = { meta, P, L, K, byPair, byCell, classMeta, kByLayer, dist, distSpec, alg, seg };
     D.K = raw.kaasnev || null; D.T = raw.tendus || null; D.N = raw.nouded || null; D.V = raw.vordlus || null;
+    // metoodika versioon päises (v3-st alates; v1 ja v2 lehtedel seda ei ole)
+    const bs = document.querySelector('#brand small');
+    if (bs && meta.metoodika && !bs.dataset.ver) { bs.dataset.ver = '1'; bs.textContent += ` · metoodika ${meta.metoodika}`; }
   }
 
   /* ---------- olek ---------- */
@@ -93,6 +96,7 @@
     groups: new Set(), props: new Set(), layers: new Set(), pair: 2, est: 'm', sig: 'all', minRel: 0,
     detail: { layer: 0, unit: 0 }, profUnit: 0, sort: { col: 'rel', dir: -1 },
     dmode: 'over', dzero: false, lunit: -1, lsort: 'grupp', lstack: true, lzero: false, hval: 'rel', lvnz: false,
+    ruhmad: true,
   };
   const eco = (u) => D.meta.uhikud[u].eco;
   const unitArea = (u) => D.meta.uhikud[u].pind.reduce((a, b) => a + (b || 0), 0);
@@ -100,9 +104,18 @@
   function visLayers() {
     return D.meta.teenused.map((t, i) => ({ t, i })).filter(({ t }) => S.groups.has(t.grupp) && S.props.has(t.omadus || 'muu') && S.layers.has(t.id));
   }
+  /** Metoodika v3: ökosüsteemi alamrühmad (kuivad ja märjad metsad, tase 'ruhm') ökosüsteemi kaupa. */
+  const groupsOf = (ecoCode) => D.meta.uhikud.map((u, i) => ({ u, i })).filter(({ u }) => u.tase === 'ruhm' && u.eco === ecoCode).map(({ i }) => i);
+  /** Kõik ühikud valikunimekirjade jaoks: ökosüsteem, selle rühmad, seejärel alamökosüsteemid (järjekord nagu meta.uhikud). */
+  function orderedUnits() {
+    const out = [];
+    D.meta.uhikud.forEach((u, i) => { if (u.tase === 'okosusteem') { out.push(i); out.push(...groupsOf(u.kood)); } else if (u.tase === 'alam') out.push(i); });
+    return out.map((i) => ({ u: D.meta.uhikud[i], i }));
+  }
+  const unitPrefix = (u) => (u.tase === 'okosusteem' ? '▪ ' : u.tase === 'ruhm' ? '  ▸ ' : '   ');
   function visUnits() {
     const all = D.meta.uhikud.map((u, i) => ({ u, i })).filter(({ u }) => S.ecos.has(u.eco) && u.tase === S.level);
-    if (S.level === 'okosusteem') return all.map((x) => x.i);
+    if (S.level === 'okosusteem') return all.flatMap((x) => [x.i, ...(S.ruhmad ? groupsOf(x.u.kood) : [])]);
     let sel = all;
     if (S.alamSel.size) sel = all.filter(({ i }) => S.alamSel.has(i));
     else sel = [...all].sort((a, b) => unitArea(b.i) - unitArea(a.i)).slice(0, S.alamN);
@@ -132,7 +145,8 @@
 
   /* ---------- filtrite selgitused (info-nupud) ---------- */
   const INFO = {
-    tase: ['Tase', ['Ökosüsteem: neli suurt rühma (rohumaad, sood, metsad, põllumaad). Rannikud ning asustus ja muu on baaskaardil „seisundita” ja analüüsis puuduvad.', 'Alamökosüsteem: täpsem baaskaardi tüüp (nt Salumets, 6410 sinihelmikaniidud). Lehel on alamökosüsteemid, millel on vähemalt kaks seisundit.']],
+    tase: ['Tase', ['Ökosüsteem: neli suurt rühma (rohumaad, sood, metsad, põllumaad). Rannikud ning asustus ja muu on baaskaardil „seisundita” ja analüüsis puuduvad.', 'Alamökosüsteem: täpsem baaskaardi tüüp (nt Salumets, 6410 sinihelmikaniidud). Lehel on alamökosüsteemid, millel on vähemalt kaks seisundit.', 'Ökosüsteemi tasemel on metsa kõrval ka kuivad ja märjad metsad (vt „Metsa jaotus“).']],
+    ruhm: ['Kuivad ja märjad metsad', ['Metsa alamrühmad (metoodika v3). Kuivad metsad: salumets, palumets, laanemets, loomets, nõmmemets. Märjad metsad: soovikumets, samblasoomets, rohusoomets, kõdusoomets, rabastuv mets. „Muu (metsa)kooslus“ on ainult kogu metsas.', 'Paaritatud hinnang arvutatakse samamoodi nagu ökosüsteemil: rühma alamökosüsteemide 1 km plokkide erinevuste kaalutud keskmine. Metsa hinnang on kuiva metsa, märja metsa ja muu koosluse plokkide koondhinnang, mitte kahe rühma lihtkeskmine.', 'Mitmese testimise parandus (FDR) tehakse rühmadele eraldi, nii et ökosüsteemide ja alamökosüsteemide olulisus on sama mis metoodika v2-s.', 'Paaritamata hinnangut mõjutab rühma sees alamökosüsteemide erinev koosseis (nt märgades metsades on hea seisund sageli samblasoomets, vilets seisund soovikumets või kõdusoomets).']],
     okosusteem: ['Ökosüsteem', ['Piirab, milliste ökosüsteemide tulemused näidatakse. Algsed seisundiklassid (A–F) on ökosüsteemiti erinevad, seepärast võrreldakse seisundeid alati ühe ökosüsteemi sees.']],
     alam: ['Alamökosüsteem', ['Vali konkreetsed alamökosüsteemid. Kui valikut pole, näidatakse valitud ökosüsteemide suurima pindalaga alamökosüsteeme (arvu määrab „Kui valikut pole: suurimaid”).', 'Pindala (km²) on kolme seisundi summa baaskaardil.']],
     alamN: ['Kui valikut pole: suurimaid', ['Mitu suurima pindalaga alamökosüsteemi kuvatakse, kui sa neid ise ei vali.']],
@@ -207,6 +221,11 @@
     seg(box, 'Tase', [['okosusteem', 'Ökosüsteem'], ['alam', 'Alamökosüsteem']], () => S.level, (v) => { S.level = v; }, '', 'tase');
     const ecoItems = M.uhikud.filter((u) => u.tase === 'okosusteem').map((u) => [u.kood, u.nimi]);
     chips(box, 'Ökosüsteem', ecoItems, S.ecos, 'okosusteem');
+    if (S.level === 'okosusteem' && M.uhikud.some((u) => u.tase === 'ruhm')) {
+      const g = h('div', { class: 'fgrp' }, box); lbl(g, 'Metsa jaotus', 'ruhm', 'ruhmcb');
+      const lb = h('label', { class: 'chk' }, g), cb = h('input', { type: 'checkbox', id: 'ruhmcb' }, lb); cb.checked = S.ruhmad; h('span', {}, lb, 'Kuivad ja märjad metsad');
+      cb.onchange = () => { S.ruhmad = cb.checked; renderAll(true); };
+    }
     if (S.level === 'alam') {
       const items = M.uhikud.map((u, i) => ({ u, i })).filter(({ u }) => u.tase === 'alam' && S.ecos.has(u.eco)).sort((a, b) => a.u.eco - b.u.eco || unitArea(b.i) - unitArea(a.i));
       dropdown(box, 'Alamökosüsteem', S.alamSel.size ? `${S.alamSel.size} valitud` : `${Math.min(S.alamN, items.length)} suurimat`,
@@ -272,7 +291,7 @@
     const hs = h('div', { class: 'seg', role: 'group', 'aria-label': 'Mida lahtris näidata' }, ht);
     for (const [v, t] of [['rel', 'Suhteline muutus (%)'], ['abs', 'Muutus kihi ühikus']]) { const b = h('button', { type: 'button', 'aria-pressed': String(S.hval === v) }, hs, t); b.onclick = () => { S.hval = v; renderAll(true); }; }
     if (S.hval === 'abs') h('p', { class: 'note' }, card, 'Lahtris on muutus kihi enda ühikus (biofüüsikaline, nt t C/ha, või rahaline, nt EUR/ha); ühik on rea nime järel. Värv näitab endiselt suhtelist muutust, et eri ühikutega ridu saaks võrrelda.');
-    if (S.est === 'u' && S.level === 'okosusteem') h('p', { class: 'warn' }, card, 'Paaritamata hinnang ökosüsteemi tasemel on toorhinnang: seisundiklasside alamökosüsteemide koosseis võib erineda ja see mõjutab tulemust. Soovitatav on paaritatud hinnang.');
+    if (S.est === 'u' && S.level === 'okosusteem') h('p', { class: 'warn' }, card, 'Paaritamata hinnang ökosüsteemi tasemel (ka kuivades ja märgades metsades) on toorhinnang: seisundiklasside alamökosüsteemide koosseis võib erineda ja see mõjutab tulemust. Soovitatav on paaritatud hinnang.');
     if (!rows.length || !units.length) { h('p', { class: 'empty' }, card, 'Valitud filtritele ei vasta ühtegi tulemust.'); return; }
     const wrapW0 = Math.max(root.clientWidth - 40, 300), labelW = wrapW0 < 700 ? 176 : 360, maxCh = Math.floor(labelW / 6.4), hdrH = S.level === 'alam' ? 150 : 44, rowH = 26, gap = 2;
     const wrapW = Math.max(root.clientWidth - 40, 300);
@@ -285,7 +304,13 @@
     units.forEach((u, j) => {
       const U = D.meta.uhikud[u], x = labelW + j * cw + cw / 2;
       if (S.level === 'alam') h('text', { x, y: hdrH - 6, transform: `rotate(-45 ${x} ${hdrH - 6})`, class: 'lbl' }, svg, U.nimi.length > 34 ? `${U.nimi.slice(0, 33)}…` : U.nimi);
-      else h('text', { x, y: hdrH - 10, 'text-anchor': 'middle', class: 'strong' }, svg, U.nimi);
+      else if (U.tase === 'ruhm') {
+        // metsa alamrühm: kahel real, tavakirjas, metsa veeru kõrval
+        const [w1, ...rest] = U.nimi.split(' ');
+        const t = h('text', { x, y: hdrH - 22, 'text-anchor': 'middle', class: 'lbl' }, svg);
+        h('tspan', { x, dy: 0 }, t, `↳ ${w1}`); h('tspan', { x, dy: 12 }, t, rest.join(' '));
+        h('title', {}, t, `${U.nimi}: metsa alamrühm (vt info „Metsa jaotus“)`);
+      } else h('text', { x, y: hdrH - 10, 'text-anchor': 'middle', class: 'strong' }, svg, U.nimi);
     });
     let y = hdrH; last = null;
     for (const r of rows) {
@@ -337,6 +362,7 @@
   function pairTip(t, c) {
     const T = D.meta.teenused[c.layer_id], U = D.meta.uhikud[c.unit_code], e = est(c), eta = T.eta2[String(U.eco)];
     tl(t, 'm', `${T.nimi}`); tl(t, 'm', `${U.nimi} · ${D.meta.paarid[c.pair].replace('→', ' → ')}`);
+    if (U.tase === 'ruhm') tl(t, 'm', 'metsa alamrühm; FDR-parandus rühmadele eraldi; η² on kogu metsa väärtus');
     if (!e || !e.ok) { tl(t, 'm', 'Pole piisavalt andmeid selle hinnangu jaoks'); return; }
     tl(t, 'v', `${pct(e.rel, 1)}  (${sgn(e.d)} ${T.uhik || ''})`);
     tl(t, 'm', `95 % CI: ${sgn(e.lo)} … ${sgn(e.hi)}`);
@@ -362,8 +388,8 @@
     sl.onchange = () => { S.detail.layer = +sl.value; renderAll(true); };
     const g2 = h('div', { class: 'fgrp' }, ctl); h('label', { for: 'du' }, g2, 'Ökosüsteem / alamökosüsteem');
     const su = h('select', { id: 'du' }, g2);
-    const us = M.uhikud.map((u, i) => ({ u, i })).filter(({ i }) => D.byCell.has(`${li}|${i}|0`) || D.byCell.has(`${li}|${i}|1`) || D.byCell.has(`${li}|${i}|2`));
-    for (const { u, i } of us) { const o = h('option', { value: i }, su, `${u.tase === 'okosusteem' ? '▪ ' : '   '}${u.nimi}`); if (i === ui) o.selected = true; }
+    const us = orderedUnits().filter(({ i }) => D.byCell.has(`${li}|${i}|0`) || D.byCell.has(`${li}|${i}|1`) || D.byCell.has(`${li}|${i}|2`));
+    for (const { u, i } of us) { const o = h('option', { value: i }, su, `${unitPrefix(u)}${u.nimi}`); if (i === ui) o.selected = true; }
     if (!us.some(({ i }) => i === ui) && us.length) S.detail.unit = us[0].i;
     su.onchange = () => { S.detail.unit = +su.value; renderAll(true); };
     h('h2', {}, card, T.nimi);
@@ -670,9 +696,9 @@
     h('p', { class: 'sub' }, card, 'Iga kaart näitab teenuse pikslite jaotust kolmes seisundis (igal seisundil oma 100 %; y-telg on kaardi sees normeeritud, et kuju oleks võrreldav). Kolmnurgad teljel = täpsed mediaanid. Kui kõverad on üksteisest eraldi, muutub teenus seisundi vahel; kui kattuvad, ei muutu. Klõpsa kaarti, et avada täpne jaotus, tabel ja hinnangud.');
     const ctl = h('div', { class: 'frow' }, card); const g = h('div', { class: 'fgrp wide' }, ctl); h('label', { for: 'du2' }, g, 'Ökosüsteem / alamökosüsteem');
     const sel = h('select', { id: 'du2' }, g);
-    const us = M.uhikud.map((u, i) => ({ u, i })).filter(({ u }) => S.ecos.has(u.eco));
+    const us = orderedUnits().filter(({ u }) => S.ecos.has(u.eco));
     if (!us.some(({ i }) => i === S.profUnit) && us.length) S.profUnit = us[0].i;
-    for (const { u, i } of us) { const o = h('option', { value: i }, sel, `${u.tase === 'okosusteem' ? '▪ ' : '   '}${u.nimi}`); if (i === S.profUnit) o.selected = true; }
+    for (const { u, i } of us) { const o = h('option', { value: i }, sel, `${unitPrefix(u)}${u.nimi}`); if (i === S.profUnit) o.selected = true; }
     sel.onchange = () => { S.profUnit = +sel.value; renderAll(true); };
     stateLegend(card);
     const minis = h('div', { class: 'minis big' }, card); let n = 0;
@@ -763,7 +789,7 @@
     const g = h('div', { class: 'fgrp wide' }, ctl); h('label', { for: 'lu' }, g, 'Üksus');
     const sel = h('select', { id: 'lu' }, g);
     const o0 = h('option', { value: -1 }, sel, '▪ Kõik ökosüsteemid kokku'); if (S.lunit === -1) o0.selected = true;
-    for (const [i, u] of M.uhikud.entries()) { if (!S.ecos.has(u.eco)) continue; const o = h('option', { value: i }, sel, `${u.tase === 'okosusteem' ? '▪ ' : '   '}${u.nimi}`); if (S.lunit === i) o.selected = true; }
+    for (const { u, i } of orderedUnits()) { if (!S.ecos.has(u.eco)) continue; const o = h('option', { value: i }, sel, `${unitPrefix(u)}${u.nimi}`); if (S.lunit === i) o.selected = true; }
     sel.onchange = () => { S.lunit = +sel.value; renderAll(true); };
     const g2 = h('div', { class: 'fgrp' }, ctl); h('label', { for: 'ls' }, g2, 'Järjesta');
     const ss = h('select', { id: 'ls' }, g2);
@@ -935,9 +961,9 @@
     h('p', { class: 'sub' }, card, 'Iga mini-graafik näitab teenuse mediaani kolmes seisundis kihi enda ühikus (igal graafikul oma skaala). Joon on ainult lugemise abi; hinnangud ja olulisus on teenuse detailis. Klõpsa graafikut, et avada detail.');
     const ctl = h('div', { class: 'frow' }, card); const g = h('div', { class: 'fgrp wide' }, ctl); h('label', { for: 'pu' }, g, 'Ökosüsteem / alamökosüsteem');
     const sel = h('select', { id: 'pu' }, g);
-    const us = M.uhikud.map((u, i) => ({ u, i })).filter(({ u }) => S.ecos.has(u.eco));
+    const us = orderedUnits().filter(({ u }) => S.ecos.has(u.eco));
     if (!us.some(({ i }) => i === S.profUnit) && us.length) S.profUnit = us[0].i;
-    for (const { u, i } of us) { const o = h('option', { value: i }, sel, `${u.tase === 'okosusteem' ? '▪ ' : '   '}${u.nimi}`); if (i === S.profUnit) o.selected = true; }
+    for (const { u, i } of us) { const o = h('option', { value: i }, sel, `${unitPrefix(u)}${u.nimi}`); if (i === S.profUnit) o.selected = true; }
     sel.onchange = () => { S.profUnit = +sel.value; renderAll(true); };
     const minis = h('div', { class: 'minis' }, card); let n = 0, lastG = null;
     for (const { t, i } of visLayers()) {
@@ -1034,7 +1060,8 @@
     P('Märked: „ei paku“ = nullist erinevaid piksleid alla 1 % kehtivatest (lähtekasu „väga-väga vähe“; lävi on meie valik); „–“ = kehtivaid piksleid alla 5 % klassist; kaldkiri ja kollane = osaline kate; † definitsiooniline seos seisundiga; ‡ madalama lahutusvõimega kiht; § erandkiht.');
     h('h3', {}, card, 'Hinnang ja olulisus');
     P(`Muutus Δ = parema seisundi mediaan − halvema seisundi mediaan. Paaritatud hinnang võrdleb seisundite mediaane samas 1 km plokis ja samas alamökosüsteemis (kummaski vähemalt ${p.min_area_ha} ha) ning koondab plokkide erinevused kaalutud keskmisena (kaal n_a·n_b/(n_a+n_b)). See kontrollib asukoha ja alamökosüsteemi koosseisu mõju. Paaritamata hinnang on kõigi pikslite mediaanide vahe. Suhteline muutus (Δ %): paaritatud hinnangul Δ jagatud halvema seisundi plokimediaanide kaalutud keskmisega samades paarides ja sama kaaluga, st parema ja halvema seisundi kaalutud plokimediaanide suhe miinus 1 (lugeja ja nimetaja tulevad samadest paaridest); paaritamata hinnangul Δ jagatud halvema seisundi mediaaniga. Kui nimetaja on 0, suhtelist muutust ei ole.`);
-    P(`Olulisus: ${nf(0).format(p.cluster_blocks)} × ${nf(0).format(p.cluster_blocks)} km klastrite bootstrap (${nf(0).format(p.n_boot)} kordust) arvestab ruumilist autokorrelatsiooni; kahepoolsed p-väärtused korrigeeritakse Benjamini–Hochbergi meetodiga (FDR) eraldi ökosüsteemi ja alamökosüsteemi taseme jaoks (α = ${p.alpha}). Hinnang on „oluline”, kui q < ${p.alpha} ja vähemalt ${p.min_strata} paari ning ${p.min_clusters} klastrit.`);
+    P(`Olulisus: ${nf(0).format(p.cluster_blocks)} × ${nf(0).format(p.cluster_blocks)} km klastrite bootstrap (${nf(0).format(p.n_boot)} kordust) arvestab ruumilist autokorrelatsiooni; kahepoolsed p-väärtused korrigeeritakse Benjamini–Hochbergi meetodiga (FDR) eraldi ökosüsteemi ja alamökosüsteemi taseme jaoks${D.meta.ruhmad ? ' ning kuivade ja märgade metsade jaoks' : ''} (α = ${p.alpha}). Hinnang on „oluline”, kui q < ${p.alpha} ja vähemalt ${p.min_strata} paari ning ${p.min_clusters} klastrit.`);
+    if (D.meta.ruhmad) P('Kuivad ja märjad metsad (metoodika v3): kuivad = salumets, palumets, laanemets, loomets, nõmmemets; märjad = soovikumets, samblasoomets, rohusoomets, kõdusoomets, rabastuv mets; „Muu (metsa)kooslus“ on ainult kogu metsas. Rühma paaritatud hinnang arvutatakse samamoodi nagu ökosüsteemil, rühma alamökosüsteemide 1 km plokkidest. Metsa hinnang on kuiva metsa, märja metsa ja muu koosluse plokkide koondhinnang (kaal = paaride täpsus, mitte pindala), mitte kahe rühma keskmine. Metoodika v2 hinnangud on samad; v2 leht on aadressil ../v2/.');
     h('h3', {}, card, 'Piirangud, mida tuleb arvestada');
     const ul = h('ul', {}, card);
     for (const s of [
@@ -1056,7 +1083,7 @@
     const M = D.meta;
     S.level = 'okosusteem'; S.ecos = new Set(M.uhikud.filter((u) => u.tase === 'okosusteem').map((u) => u.kood));
     S.alamSel = new Set(); S.alamN = 12; S.groups = new Set(M.teenused.map((t) => t.grupp)); S.props = new Set(['biofüüsikaline', 'rahaline', 'muu']);
-    S.layers = new Set(M.teenused.map((t) => t.id)); S.pair = 2; S.est = 'm'; S.sig = 'all'; S.minRel = 0;
+    S.layers = new Set(M.teenused.map((t) => t.id)); S.pair = 2; S.est = 'm'; S.sig = 'all'; S.minRel = 0; S.ruhmad = true;
   }
   function renderAll(keep) {
     renderSections();

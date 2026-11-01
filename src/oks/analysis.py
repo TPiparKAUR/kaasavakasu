@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 import polars as pl
 
-from . import baas, catalog, config, fetch, mixing, pipeline, stats
+from . import baas, catalog, config, fetch, mixing, pipeline, ruhmad, stats
 
 log = logging.getLogger(__name__)
 
@@ -59,6 +59,56 @@ def unit_table(classes: pl.DataFrame, used: pl.DataFrame, u: stats.Units) -> pl.
             }
         )
     return pl.DataFrame(rows)
+
+
+def group_unit_table(used: pl.DataFrame, ug: stats.Units) -> pl.DataFrame:
+    """Rühmaühikute read ühikute tabelisse (metoodika v3): tase ``ruhm``, pindala seisundi kaupa (5 m täisresolutsioon)."""
+    idx = used["idx"].to_numpy()
+    rows: list[dict[str, object]] = []
+    for gi, code in enumerate(ug.eco_codes):
+        g = ruhmad.GROUPS[code]
+        sub = used.filter(pl.Series(ug.cls_eco[idx] == gi))
+        a = sub.group_by("seisund").agg(pl.col("pindala_km2").sum())
+        d = dict(zip(a["seisund"], a["pindala_km2"], strict=True))
+        rows.append(
+            {
+                "unit_level": ruhmad.LEVEL,
+                "unit_code": int(code),
+                "nimi": g.name,
+                "eco_code": int(g.eco),
+                **{f"pind_{s}": float(d.get(s, 0.0)) for s in stats.STATES},
+            }
+        )
+    return pl.DataFrame(rows)
+
+
+def _assert_same_rows(a: pl.DataFrame, b: pl.DataFrame, keys: list[str], what: str) -> None:
+    """Kontrolli, et rühmaühikute jooksu alamökosüsteemi read võrduvad põhijooksu omadega (metoodika v3).
+
+    Mõlemad tulevad samast sisendist ja samade funktsioonidega; erinevus tähendaks viga rühmaühikute koostamises.
+    Ujukomaarvude tolerants on 1e-12 + 1e-9·|x| (maatriksarvutuse liitmisjärjekord võib muuta viimast bitti).
+    """
+    if a.is_empty() and b.is_empty():
+        return
+    a = a.filter(pl.col("unit_level") == "alam")
+    b = b.filter(
+        (pl.col("unit_level") == "alam") & pl.col("unit_code").is_in(a["unit_code"].unique().to_list())
+    )
+    a = a.filter(pl.col("unit_code").is_in(b["unit_code"].unique().to_list()))
+    if a.height != b.height:
+        raise RuntimeError(f"{what}: rühmajooksu alam-ridu {b.height}, põhijooksus {a.height}")
+    j = a.join(b, on=keys, how="inner", suffix="__g")
+    if j.height != a.height:
+        raise RuntimeError(f"{what}: alam-read ei ühti võtmete järgi")
+    for c in a.columns:
+        if c in keys or f"{c}__g" not in j.columns or not a.schema[c].is_numeric():
+            continue
+        x = j[c].cast(pl.Float64).to_numpy()
+        y = j[f"{c}__g"].cast(pl.Float64).to_numpy()
+        both_nan = np.isnan(x) & np.isnan(y)
+        bad = ~both_nan & ~(np.abs(x - y) <= 1e-12 + 1e-9 * np.abs(x))
+        if bad.any():
+            raise RuntimeError(f"{what}: veerg {c} erineb rühmajooksus {int(bad.sum())} alam-real")
 
 
 def diagnostics(tbl: pl.DataFrame, u: stats.Units) -> list[dict[str, object]]:
@@ -192,7 +242,7 @@ def run_mixing(
 
 
 def distributions(
-    u: stats.Units, ids: list[str], blocks_dir: Path | None = None
+    u: stats.Units, ids: list[str], blocks_dir: Path | None = None, ug: stats.Units | None = None
 ) -> tuple[pl.DataFrame, dict[str, dict[str, object]]]:
     """Liida klasside histogrammid ökosüsteemi/alamökosüsteemi ja seisundi tasemele.
 
@@ -204,6 +254,8 @@ def distributions(
         Kihtide id-d; kasutatakse neid, millel on histogrammi failid (``pipeline.write_hist``).
     blocks_dir
         Histogrammide kaust (vaikimisi ``config.BLOCKS``).
+    ug
+        Rühmaühikud (``ruhmad.make_group_units``; metoodika v3); kui antud, lisatakse tase ``ruhm``.
 
     Returns
     -------
@@ -252,7 +304,28 @@ def distributions(
             )
             .drop("alam")
         )
-        part = pl.concat([eco_part, alam_part], how="diagonal_relaxed").with_columns(
+        parts = [eco_part, alam_part]
+        if ug is not None:
+            grp_map = dict(enumerate(ug.eco_codes))
+            parts.append(
+                pl.DataFrame(
+                    {
+                        "bin": h["bin"].cast(pl.Int64),
+                        "n": h["n"].cast(pl.Int64),
+                        "state": ug.cls_state[cls].astype(np.int64),
+                        "grp": ug.cls_eco[cls].astype(np.int64),
+                    }
+                )
+                .filter((pl.col("state") >= 0) & (pl.col("grp") >= 0))
+                .group_by(["grp", "state", "bin"])
+                .agg(pl.col("n").sum())
+                .with_columns(
+                    pl.lit(ruhmad.LEVEL).alias("unit_level"),
+                    pl.col("grp").replace_strict(grp_map, return_dtype=pl.Int64).alias("unit_code"),
+                )
+                .drop("grp")
+            )
+        part = pl.concat(parts, how="diagonal_relaxed").with_columns(
             pl.lit(lid).alias("layer_id"),
             pl.col("state").replace_strict(dict(enumerate(stats.STATES)), return_dtype=pl.String),
         )
@@ -317,7 +390,9 @@ def _layer_cache(cache_dir: Path, layer_id: str, params: stats.Params, unpaired_
         pipeline.val_path(layer_id),
     ]
     stamp = [f.stat().st_mtime_ns if f.exists() else 0 for f in inputs]
-    key = json.dumps([sorted(params.__dict__.items()), unpaired_boot, stamp], default=str)
+    key = json.dumps(
+        [sorted(params.__dict__.items()), unpaired_boot, stamp, config.METHOD_VERSION], default=str
+    )
     return cache_dir / f"{layer_id}__{hashlib.sha256(key.encode()).hexdigest()[:16]}"
 
 
@@ -343,7 +418,10 @@ def run(
     cache_dir
         Kui antud, salvestatakse iga kihi tulemus siia ja katkenud jooks jätkub valmis kihtidest
         (võti: parameetrid ja sisendfailide muutmisajad; vt ``_layer_cache``). Koodi muutmisel tuleb
-        vahemälu kustutada, sest kood ei ole võtme osa.
+        vahemälu kustutada, sest kood ei ole võtme osa (võtmes on ``config.METHOD_VERSION``).
+
+    Metoodika v3: iga kihi kohta arvutatakse samade funktsioonide ja sama bootstrapiga ka rühmaühikud
+    (``ruhmad.GROUPS``, tase ``ruhm``). Ökosüsteemi ja alamökosüsteemi read on samad mis v2-s.
     """
     params = params or stats.Params()
     out_dir = out_dir or config.RESULTS
@@ -354,7 +432,10 @@ def run(
     )
     ev = catalog.evaluated(cat).filter(pl.col("tyyp").is_in(["raster", "vektor"]))
     classes, used, u = load_context()
-    unit_table(classes, used, u).write_parquet(out_dir / "uhikud.parquet")
+    ug = ruhmad.make_group_units(used)
+    pl.concat([unit_table(classes, used, u), group_unit_table(used, ug)]).write_parquet(
+        out_dir / "uhikud.parquet"
+    )
     n_cl = stats.cluster_index(np.array([stats.E_MIN]), np.array([stats.N_MIN]), params.cluster_blocks)[1]
     W = stats._boot_weights(n_cl, params.n_boot, params.seed)
     pairs: list[pl.DataFrame] = []
@@ -383,16 +464,30 @@ def run(
         tbl = pl.read_parquet(path)
         res_m = res_effective(r["spatial_resolution"])
         out = stats.analyse_layer(tbl, u, res_m, params, W)
+        out_g = stats.analyse_layer(tbl, ug, res_m, params, W)  # metoodika v3: rühmaühikud
         vdir, bpath = pipeline.val_path(r["id"]), pipeline.blkmed_path(r["id"])
         if vdir.is_dir() and bpath.exists() and not tbl.is_empty():
-            med = stats.analyse_layer_median(
-                pl.read_parquet(bpath), vdir, u, used, res_m, params, W, unpaired_median_boot
-            )
+            blk = pl.read_parquet(bpath)
+            med = stats.analyse_layer_median(blk, vdir, u, used, res_m, params, W, unpaired_median_boot)
             out = _join_median(out, med)
-            if not out["algklassid"].is_empty():
-                alg_tabs.append(out["algklassid"].with_columns(pl.lit(r["id"]).alias("layer_id")))
+            med_g = stats.analyse_layer_median(
+                ruhmad.group_blkmed(blk, vdir, used), vdir, ug, used, res_m, params, W, unpaired_median_boot
+            )
+            out_g = _join_median(out_g, med_g)
+            alg = pl.concat([out["algklassid"], ruhmad.relabel(out_g["algklassid"])], how="diagonal_relaxed")
+            if not alg.is_empty():
+                alg_tabs.append(alg.with_columns(pl.lit(r["id"]).alias("layer_id")))
         else:
             log.warning("%s: mediaanide sisend puudub (aggregeeri uuesti)", r["id"])
+        # rühmajooksu alam-read peavad võrduma põhijooksu omadega (sama sisend, samad funktsioonid)
+        _assert_same_rows(
+            out["paarid"], out_g["paarid"], ["unit_level", "unit_code", "pair"], f"{r['id']} paarid"
+        )
+        _assert_same_rows(
+            out["lahtrid"], out_g["lahtrid"], ["unit_level", "unit_code", "state"], f"{r['id']} lahtrid"
+        )
+        for key in ("paarid", "lahtrid"):
+            out[key] = pl.concat([out[key], ruhmad.relabel(out_g[key])], how="diagonal_relaxed")
         for key, lst in (("paarid", pairs), ("lahtrid", cells), ("klassid", cls_tabs)):
             if not out[key].is_empty():
                 lst.append(
@@ -450,7 +545,7 @@ def run(
         "diagnostika": pl.DataFrame(diag),
         **mixed,
     }
-    dist, dspecs = distributions(u, [r["id"] for r in ev.iter_rows(named=True)])
+    dist, dspecs = distributions(u, [r["id"] for r in ev.iter_rows(named=True)], ug=ug)
     if not dist.is_empty():
         bad = check_distributions(dist, dspecs, res["lahtrid"])
         if not bad.is_empty():
@@ -468,6 +563,10 @@ def run(
     return res
 
 
+#: Analüüsi tasemed; FDR-parandus tehakse iga taseme sees eraldi (metoodika v3: rühmad on oma perekond, nii et
+#: ökosüsteemi ja alamökosüsteemi q-väärtused on samad mis v2-s).
+LEVELS: tuple[str, ...] = ("okosusteem", "alam", ruhmad.LEVEL)
+
 #: FDR-perekonnad: (p-väärtus, q-väärtus); ``_med`` = mediaanipõhine (metoodika v2).
 _FDR = (
     ("p_m", "q_m"),
@@ -480,13 +579,13 @@ _FDR = (
 
 
 def add_fdr(paarid: pl.DataFrame, alpha: float) -> pl.DataFrame:
-    """Lisa FDR-korrigeeritud q-väärtused (perekond = unit_level) ja olulisuse lipud (keskmise ja mediaani kohta)."""
+    """Lisa FDR-korrigeeritud q-väärtused (perekond = unit_level, ``LEVELS``) ja olulisuse lipud (keskmise ja mediaani kohta)."""
     parts = []
     for col in ("p_u", "wilcoxon_p", "p_m"):
         if col not in paarid.columns:
             paarid = paarid.with_columns(pl.lit(None, dtype=pl.Float64).alias(col))
     fam = [(pc, qc) for pc, qc in _FDR if pc in paarid.columns]
-    for level in ("okosusteem", "alam"):
+    for level in LEVELS:
         d = paarid.filter(pl.col("unit_level") == level)
         if d.is_empty():
             continue
@@ -577,7 +676,7 @@ def sensitivity(
             pl.col("enough_m").alias("e1"),
         )
         j = b.join(v, on=_KEYS, how="inner")
-        for level in ("okosusteem", "alam"):
+        for level in LEVELS:
             jl = j.filter(pl.col("unit_level") == level)
             both = jl.filter(pl.col("e0") & pl.col("e1"))
             sig0 = both.filter(pl.col("s0"))

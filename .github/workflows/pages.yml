@@ -39,22 +39,24 @@ jobs:
         run: |
           git worktree add ../v2 "$V2_COMMIT"
           (cd ../v2 && uv sync --frozen && uv run python -m oks site --out "$GITHUB_WORKSPACE/_site/v2")
-      # Vaikeharu praegune seis ehitatakse ainult kontrolliks (ei avaldata), kuni sellele antakse oma aadress.
+      # Metoodika v3 (kuivad ja märjad metsad statistilises analüüsis) ehitatakse vaikeharu seisust aadressile /v3/.
+      # Tagasi v2-le: git revert v3 commit; see eemaldab ka selle sammu.
       - run: uv sync --frozen
-      - run: uv run python -m oks site --out _kontroll
-      - name: v2 lehed otsingumootoritest välja
+      - run: uv run python -m oks site --out _site/v3
+      - name: v2 ja v3 lehed otsingumootoritest välja
         run: |
-          for f in _site/v2/*.html; do
+          for f in _site/v2/*.html _site/v3/*.html; do
             sed -i '0,/<head>/s||<head>\n<meta name="robots" content="noindex, nofollow">|' "$f"
           done
       - name: Kontrolli, et leht ja andmed on olemas
         run: |
-          for d in _site _site/v2 _kontroll; do
+          for d in _site _site/v2 _site/v3; do
             test -s $d/index.html
             test -s $d/data/paarid.json
             test -s $d/oks-seisund.html
           done
           grep -q 'name="robots" content="noindex' _site/v2/index.html
+          grep -q 'name="robots" content="noindex' _site/v3/index.html
           ! grep -q 'name="robots"' _site/index.html
       - if: github.ref_name == github.event.repository.default_branch
         uses: actions/configure-pages@v5

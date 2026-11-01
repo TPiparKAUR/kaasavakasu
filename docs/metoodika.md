@@ -10,6 +10,9 @@ Otsused ja põhjendused: [metoodika_v2_otsused.md](metoodika_v2_otsused.md). Met
 kirjeldus on commit'is `5aa4596`; erinevused on veebilehe jaotises „Metoodika võrdlus“ ja failides
 `data/tulemused/vordlus_*.csv` (`scripts/vordle_metoodikad.py`).
 
+**Metoodika v3 (2026-11).** Statistilises analüüsis on suurte ökosüsteemide kõrval ka kuivad ja märjad metsad (tase
+`ruhm`, § 5.5). v2 hinnangud ei muutu. Otsused: [metoodika_v3_otsused.md](metoodika_v3_otsused.md).
+
 ## 1. Küsimus
 
 Kui seisund liigub ühe ökosüsteemi või alamökosüsteemi sees klasside **vilets → keskmine → hea** vahel:
@@ -207,6 +210,24 @@ Kehtivus on sama mis plokitabelis.
   kvalitatiivseid ettepanekuid (CICES sektsioon, suund, ajaraam, ulatus, topeltarvestus, ebakindlus). Hinnangulised veerud
   on ettepanekud, mida ekspert kinnitab.
 
+## 5.5 Kuivad ja märjad metsad (metoodika v3)
+
+* **Rühmad** (`oks.ruhmad.GROUPS`, sama mis tulemustabelis): kuivad metsad (31) = salu-, palu-, laane-, loo- ja nõmmemets;
+  märjad metsad (32) = soovikumets, samblasoomets, rohusoomets, kõdusoomets, rabastuv mets. „Muu (metsa)kooslus“ on ainult
+  kogu metsas. Jaotus on kasvukohatüübi järgi, mitte praeguse veerežiimi järgi (kõdusoomets on kuivendatud).
+* **Paaritatud hinnang** rühmale on sama mis ökosüsteemile (§ 5.1), ainult stratumid on rühma alamökosüsteemidest:
+  `Δ_g = Σ_{i∈S_g} w_i d_i / Σ_{i∈S_g} w_i`. Bootstrap, seeme ja piisavuse lävendid on samad.
+* **Seos metsa hinnanguga:** metsa stratumid on kuiva metsa, märja metsa ja muu koosluse stratumite ühend, seega
+  `Δ_mets = (W_kuiv Δ_kuiv + W_märg Δ_märg + W_muu Δ_muu) / (W_kuiv + W_märg + W_muu)`, kus `W = Σw` (`sum_w_m_med`).
+  Kaal on täpsuskaal, mitte pindala.
+* **Paaritamata hinnang** on rühma tasemel toorhinnang nagu ökosüsteemi tasemel (§ 5.2). Rühma sees on seisundite koosseis
+  erinev: märjas metsas on samblasoomets ~31 % hea seisundi pindalast, kuid ~4 % viletsa seisundi pindalast.
+* **FDR** tehakse rühmadele eraldi (§ 6), seega on ökosüsteemi ja alamökosüsteemi q-väärtused samad mis v2-s.
+* **Paaritatud tasemed** (kõigil tasemetel): `level_a_m_med` ja `level_b_m_med` = halvema ja parema seisundi
+  plokimediaanide kaalutud keskmine samades paarides (`level_b − level_a = Δ`), `sum_w_m_med` = kaalude summa. Need ei ole
+  seisundi tase kogu pindala kohta (selleks on täpne pikslimediaan) ja sõltuvad seisundipaarist.
+* **η²** (§ 8) on rühmadel kogu metsa väärtus; segumudelit (§ 7) rühmadele ei hinnata.
+
 ## 6. Statistiline olulisus
 
 * **Klastri-bootstrap.** Ruumiline autokorrelatsioon tähendab, et piksleid ega külgnevaid plokke ei saa käsitleda sõltumatutena
@@ -215,7 +236,8 @@ Kehtivus on sama mis plokitabelis.
   bootstrap-jaotuse 2,5. ja 97,5. protsentiil; kahepoolne p = 2·min(P(Δ* ≤ 0), P(Δ* ≥ 0)),
   alampiir 1/(B+1). Klastri-bootstrapi üldmõte: Künsch (1989), blokk-bootstrap sõltuvatel andmetel.
 * **Mitmene testimine.** Benjamini–Hochbergi FDR (Benjamini & Hochberg, 1995) eraldi **ökosüsteemi** ja **alamökosüsteemi**
-  tasemel, üle kõigi teenuste, ühikute ja seisundipaaride; `q < 0,05` = „oluline”. Mediaani- ja keskmisepõhised p-väärtused
+  tasemel (metoodika v3: ka kuivade ja märgade metsade tasemel eraldi), üle kõigi teenuste, ühikute ja seisundipaaride;
+  `q < 0,05` = „oluline”. Mediaani- ja keskmisepõhised p-väärtused
   on eraldi perekonnad (`q_m_med`, `q_u_med`, `q_wilcoxon_med` ja `q_m`, `q_u`, `q_wilcoxon`).
 * **Piisavus.** Hinnang on esitatud ja testitav ainult siis, kui on vähemalt `min_strata = 20` paari ja `min_clusters = 5`
   klastrit (paaritamata: vähemalt 20 plokki kummaski seisundis ja 5 klastrit).

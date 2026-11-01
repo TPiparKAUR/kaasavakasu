@@ -5,6 +5,8 @@ Metoodika v2: kuvatav põhiväärtus on mediaan; stsenaariumi koguhulk pindala k
 V8  Tulemustabel (Tüübid x seisund): iga kuvatud lahter (mediaan) vs ``kaasnev_tuup_seisund.parquet``
 V9  Stsenaarium: kuvatud vilets/hea mediaanid, mediaanide vahe, keskmiste vahe ja keskmiste vahe x pindala
 V10 Excel ``Tüübid × seisund`` (mediaan) vs ``kaasnev_tuup_seisund.parquet``
+V11 Kuumkaart (metoodika v3): kuivade ja märgade metsade lahtrid (paaritatud Δ kihi ühikus) vs ``paarid.parquet``
+V12 Stsenaarium (metoodika v3): kuivade ja märgade metsade paaritatud tõendus on kuvatud ja vastab ``paarid.parquet``-ile
 
 Käivitus: ``uv run --with playwright --with openpyxl python scripts/valideeri_veeb.py`` (openpyxl ja playwright
 ei ole projekti sõltuvused; kasutatakse ainult kontrolliks).
@@ -58,6 +60,66 @@ def expected_rows(kt: pl.DataFrame, layers: list[str]) -> list[dict]:
             }
         )
     return rows
+
+
+def check_groups(pg) -> dict:  # noqa: ANN001
+    """V11 ja V12: kuivad ja märjad metsad (tase ``ruhm``) kuumkaardil ja stsenaariumis."""
+    pr = pl.read_parquet(RES / "paarid.parquet")
+    g = pr.filter((pl.col("unit_level") == "ruhm") & (pl.col("pair") == "vilets→hea"))
+    if g.is_empty():
+        return {"V11/V12": "tulemustes ei ole kuivade ja märgade metsade ridu"}
+    meta = json.loads((SITE / "data/meta.json").read_text(encoding="utf-8"))
+    name = {t["nimi"]: t["id"] for t in meta["teenused"]}
+    gname = {int(k): v["nimi"] for k, v in meta["ruhmad"].items()}
+    exp = {(r["layer_id"], gname[r["unit_code"]]): r for r in g.iter_rows(named=True)}
+    out: dict = {}
+    # V11: kuumkaart, ökosüsteemi tase, vilets -> hea, paaritatud, muutus kihi ühikus
+    pg.click("nav.sections a:has-text('Statistiline analüüs')")
+    pg.wait_for_selector("svg g.cell")
+    pg.click("button:has-text('Muutus kihi ühikus')")
+    pg.wait_for_selector("svg g.cell")
+    labels = pg.evaluate(
+        """() => [...document.querySelectorAll('svg g.cell[aria-label]')].map(g => g.getAttribute('aria-label'))"""
+    )
+    bad, n, seen = [], 0, set()
+    for lab in labels:
+        head, _, txt = lab.rpartition(": ")
+        layer, _, unit = head.rpartition(", ")
+        if unit not in gname.values() or layer not in name:
+            continue
+        seen.add(unit)
+        e = exp.get((name[layer], unit))
+        if e is None or not e["enough_m"]:
+            continue
+        n += 1
+        v = num(txt)
+        if v is None or not close(v, e["delta_m_med"]):
+            bad.append((layer, unit, txt, e["delta_m_med"]))
+    out["V11 kuumkaart (kuivad/märjad metsad)"] = {
+        "veerud": sorted(seen),
+        "kontrollitud lahtreid": n,
+        "lahknevusi": len(bad),
+        "näited": bad[:5],
+    }
+    # V12: stsenaarium, „Kuivad metsad: kõik tüübid kokku“, vilets -> hea
+    pg.click("nav.sections a:has-text('Stsenaarium')")
+    pg.wait_for_selector("table.scn")
+    res12 = {}
+    for code, gn in gname.items():
+        pg.select_option("#cu", f"e:{code}")
+        pg.wait_for_selector("table.scn")
+        if pg.input_value("#cf") != "vilets":
+            pg.select_option("#cf", "vilets")
+        if pg.input_value("#ct") != "hea":
+            pg.select_option("#ct", "hea")
+        pg.wait_for_selector("table.scn")
+        cells = pg.evaluate(
+            """() => [...document.querySelectorAll('table.scn tbody tr')].map(tr => tr.querySelectorAll('td')[8]?.textContent || '')"""
+        )
+        shown = [c for c in cells if c.startswith("paaritatud")]
+        res12[gn] = {"ridu": len(cells), "paaritatud tõendusega": len(shown)}
+    out["V12 stsenaarium (kuivad/märjad metsad)"] = res12
+    return out
 
 
 def main() -> None:
@@ -171,6 +233,7 @@ def main() -> None:
             "lahknevusi": len(bad9),
             "näited": bad9[:4],
         }
+        out.update(check_groups(pg))
         out["JS vead brauseris"] = errs
         b.close()
     # V10 Excel

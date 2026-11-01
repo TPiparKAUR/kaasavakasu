@@ -30,10 +30,11 @@
   }
   function evidenceFor(u, layer, pair) {
     buildTE();
-    const eu = u.alam === null ? D.meta.uhikud.find((x) => x.tase === 'okosusteem' && x.kood === u.eco) : null;
+    // suur ökosüsteem või metsa alamrühm (31/32: tase 'ruhm', metoodika v3)
+    const eu = u.alam === null ? D.meta.uhikud.find((x) => (x.tase === 'okosusteem' || x.tase === 'ruhm') && x.kood === u.eco) : null;
     if (u.alam === null && !eu) return null;
     const name = eu ? eu.nimi : u.label;
-    return D.TE.get(`${u.alam === null ? 'okosusteem' : 'alam'}|${name}|${layer}|${pair}`) || null;
+    return D.TE.get(`${u.alam === null ? eu.tase : 'alam'}|${name}|${layer}|${pair}`) || null;
   }
   function additiveUnit(l) {
     const u = unitShort(l.uhik);

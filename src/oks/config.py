@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+#: Metoodika versioon (v1 = commit 5aa4596, v2 = commit de7aca9, v3 = kuivad ja märjad metsad statistilises analüüsis).
+METHOD_VERSION = "v3"
+
 #: Arhiivi baas-URL (CloudFront). Kataloogilisting on HTML-indeks.
 ARCHIVE_BASE = "https://d549q4t3lqrx1.cloudfront.net"
 ARCHIVE_ROOT = "/arhiiv/"
