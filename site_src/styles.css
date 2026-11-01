@@ -287,12 +287,13 @@ table.scn .chg { white-space: nowrap; }
 .qn { display: flex; flex-direction: column; line-height: 1.25; } .qn small { color: var(--ink-2); font-size: .78rem; }
 .qe { text-align: center; }
 .qrow.q6 { grid-template-columns: minmax(200px, 1fr) repeat(6, 84px); }
+.qe .qsh { display: none; }
 .qb { display: inline-block; min-width: 3.4rem; text-align: center; font-size: .78rem; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--axis); font-weight: 600; }
 .qb.up { border-color: var(--pos); color: var(--good); background: color-mix(in srgb, var(--pos) 10%, var(--surface)); } .qb.down { border-color: var(--neg); color: var(--neg); background: color-mix(in srgb, var(--neg) 10%, var(--surface)); } .qb.unk { color: var(--ink-2); } .qb.none { color: var(--muted); border-style: dashed; }
 .qdl { display: grid; grid-template-columns: 14rem 1fr; gap: 4px 14px; margin: 0; padding: 4px 14px 14px; font-size: .88rem; }
 .qdl dt { color: var(--ink-2); } .qdl dd { margin: 0; }
 .cols { columns: 2 22rem; margin: 6px 0; padding-left: 1.2rem; } .cols li { margin: 2px 0; }
-@media (max-width: 720px) { .qrow { grid-template-columns: 1fr repeat(4, 56px); gap: 4px; padding: 8px; } .qrow.q6 { grid-template-columns: 1fr repeat(6, 38px); gap: 3px; } .qrow.q6.qhead .qe { font-size: .68rem; line-height: 1.1; } .qb { min-width: 2.2rem; padding: 1px 3px; } .qdl { grid-template-columns: 1fr; } .sbrow { grid-template-columns: 1fr; gap: 4px; } .hero { padding: 24px 16px; } }
+@media (max-width: 720px) { .qrow { grid-template-columns: 1fr repeat(4, 56px); gap: 4px; padding: 8px; } .qrow.q6 { grid-template-columns: minmax(0, 1fr) repeat(6, 34px); gap: 2px; } .qrow.q6.qhead .qe { font-size: .62rem; line-height: 1.1; } .qrow.q6.qhead .ql { display: none; } .qrow.q6.qhead .qsh { display: inline; } .qrow.q6 .qs { display: none; } .qrow.q6 .qb { min-width: 0; } .qb { min-width: 2.2rem; padding: 1px 3px; } .qdl { grid-template-columns: 1fr; } .sbrow { grid-template-columns: 1fr; gap: 4px; } .hero { padding: 24px 16px; } }
 
 /* ---------- lähteülesande täitmine ---------- */
 table.req td, table.req th { white-space: normal; text-align: left; vertical-align: top; } table.req td.rid { font-weight: 700; color: var(--ink-2); white-space: nowrap; }

@@ -14,6 +14,25 @@
     "lahknevusi": 0,
     "näited": []
   },
+  "V11 kuumkaart (kuivad/märjad metsad)": {
+    "veerud": [
+      "Kuivad metsad",
+      "Märjad metsad"
+    ],
+    "kontrollitud lahtreid": 68,
+    "lahknevusi": 0,
+    "näited": []
+  },
+  "V12 stsenaarium (kuivad/märjad metsad)": {
+    "Kuivad metsad": {
+      "ridu": 34,
+      "paaritatud tõendusega": 30
+    },
+    "Märjad metsad": {
+      "ridu": 34,
+      "paaritatud tõendusega": 28
+    }
+  },
   "JS vead brauseris": [],
   "V10 Excel (Tüübid × seisund)": {
     "ridu": 152,

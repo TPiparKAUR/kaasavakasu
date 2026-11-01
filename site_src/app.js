@@ -3,7 +3,7 @@
   'use strict';
 
   /* ---------- abifunktsioonid ---------- */
-  const SVG = new Set(['svg', 'g', 'rect', 'line', 'path', 'circle', 'text', 'title', 'polygon', 'polyline']);
+  const SVG = new Set(['svg', 'g', 'rect', 'line', 'path', 'circle', 'text', 'title', 'polygon', 'polyline', 'tspan']);
   const NS = 'http://www.w3.org/2000/svg';
   function h(tag, attrs, parent, text) {
     const e = SVG.has(tag) ? document.createElementNS(NS, tag) : document.createElement(tag);

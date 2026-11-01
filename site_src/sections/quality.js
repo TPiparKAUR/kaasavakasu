@@ -29,7 +29,9 @@
     const qEcos = D.meta.uhikud.some((x) => x.tase === 'ruhm') ? [3, 31, 32, 2, 1, 4] : [3, 2, 1, 4];
     const q6 = qEcos.length > 4 ? ' q6' : '';
     const head = h('div', { class: `qrow qhead${q6}` }, wrap);
-    h('div', {}, head, 'Loodushüve'); for (const ok of qEcos) h('div', { class: 'qe' }, head, ECO_SHORT[ok]);
+    const QSHORT = { 31: 'Kuiv', 32: 'Märg' }; // kitsal ekraanil (kuivad / märjad metsad)
+    h('div', {}, head, 'Loodushüve');
+    for (const ok of qEcos) { const c = h('div', { class: 'qe', title: ECO_SHORT[ok] }, head); h('span', { class: 'ql' }, c, ECO_SHORT[ok]); h('span', { class: 'qsh' }, c, QSHORT[ok] || ECO_SHORT[ok]); }
     for (const ind of Kd.indikaatorid.filter((i) => S.qs.sekt.has(i.sektsioon))) {
       const det = h('details', { class: 'qitem' }, wrap); if (S.qs.open.has(ind.key)) det.open = true;
       det.ontoggle = () => { det.open ? S.qs.open.add(ind.key) : S.qs.open.delete(ind.key); };
@@ -40,7 +42,8 @@
         if (!q) { h('span', { class: 'qb none', title: 'tõendust ei ole (teenus ei esine või ei piisa andmeid)' }, td, '–'); continue; }
         const e = q.e, cls = e.hyve_suund === 'positiivne' ? 'up' : e.hyve_suund === 'negatiivne' ? 'down' : 'unk';
         const sym = e.hyve_suund === 'positiivne' ? '▲' : e.hyve_suund === 'negatiivne' ? '▼' : '○';
-        const b = h('span', { class: `qb ${cls}`, title: `${e.hinnang}: ${sgnRel(e.rel)} (${e.oluline ? 'oluline' : 'ei ole oluline'}); kiht ${q.lid}` }, td, `${sym} ${e.tugevus || ''}`.trim()); void b;
+        const b = h('span', { class: `qb ${cls}`, title: `${e.hinnang}: ${sgnRel(e.rel)} (${e.oluline ? 'oluline' : 'ei ole oluline'}${e.tugevus ? `, ${e.tugevus}` : ''}); kiht ${q.lid}` }, td, sym);
+        if (e.tugevus) h('span', { class: 'qs' }, b, ` ${e.tugevus}`);
       }
       const body = h('dl', { class: 'qdl' }, det);
       const row = (k, v) => { if (!v) return; h('dt', {}, body, k); h('dd', {}, body, v); };
