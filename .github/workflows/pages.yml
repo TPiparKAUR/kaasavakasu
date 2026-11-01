@@ -24,16 +24,24 @@ jobs:
         with:
           fetch-depth: 0 # v1 leht ehitatakse commit'ist V1_COMMIT
       - uses: astral-sh/setup-uv@v5
-      # Metoodika v1 (keskmised) jääb peaaadressile muutmata kujul, v2 (mediaanid) on aadressil /v2/ (ainult otselink,
-      # v1 lehel viidet ei ole; v2 lehed on märgitud noindex). Vahetamiseks: ehita v2 otse _site-i ja eemalda v1 samm.
+      # Iga avaldatud metoodika versioon ehitatakse oma kindlast commit'ist, nii et hilisemad muudatused vaikeharus
+      # seda ei muuda. v1 (keskmised) peaaadressil muutmata kujul; v2 (mediaanid) aadressil /v2/ (ainult otselink,
+      # v1 lehel viidet ei ole; v2 lehed on märgitud noindex). Peaaadressi vahetamiseks: ehita soovitud versioon _site-i.
       - name: Ehita v1 leht (commit V1_COMMIT) peaaadressile
         env:
           V1_COMMIT: 5aa4596
         run: |
           git worktree add ../v1 "$V1_COMMIT"
           (cd ../v1 && uv sync --frozen && uv run python -m oks site --out "$GITHUB_WORKSPACE/_site")
+      - name: Ehita v2 leht (commit V2_COMMIT) aadressile /v2/
+        env:
+          V2_COMMIT: de7aca9
+        run: |
+          git worktree add ../v2 "$V2_COMMIT"
+          (cd ../v2 && uv sync --frozen && uv run python -m oks site --out "$GITHUB_WORKSPACE/_site/v2")
+      # Vaikeharu praegune seis ehitatakse ainult kontrolliks (ei avaldata), kuni sellele antakse oma aadress.
       - run: uv sync --frozen
-      - run: uv run python -m oks site --out _site/v2
+      - run: uv run python -m oks site --out _kontroll
       - name: v2 lehed otsingumootoritest välja
         run: |
           for f in _site/v2/*.html; do
@@ -41,7 +49,7 @@ jobs:
           done
       - name: Kontrolli, et leht ja andmed on olemas
         run: |
-          for d in _site _site/v2; do
+          for d in _site _site/v2 _kontroll; do
             test -s $d/index.html
             test -s $d/data/paarid.json
             test -s $d/oks-seisund.html

@@ -1,6 +1,7 @@
 # Metoodika v3 ja v4: analüüs ja tehniline ettepanek
 
-**Seis:** ettepanek, ülevaatamiseks. Koodi, tulemusfaile ega saiti ei ole muudetud.
+**Seis:** ettepanek; otsused tehtud 2026-11-01 (§ 3). Ainus tehtud muudatus: `/v2/` leht ehitatakse kindlast
+commit'ist `de7aca9` (§ 4.5). Analüüsikoodi ja tulemusfaile ei ole muudetud.
 **Võrdlusalus:** metoodika v2, commit `de7aca9` (vaikeharu HEAD 2026-11-01). Metoodika v1 on commit `5aa4596`.
 **Arvud:** kõik selle dokumendi arvud on arvutatud repo failidest `data/tulemused/paarid.parquet` ja `uhikud.parquet`
 (v2 täisjooks, 34 kihti, 4 180 paari). Uued failide, funktsioonide ja veergude nimed on **ettepanekud**, mitte olemasolev kood.
@@ -9,8 +10,8 @@
 |---|---|---|
 | v1 | keskmised, NoData välja | commit `5aa4596`, sait peaaadressil |
 | v2 | täpsed pikslimediaanid, NoData = 0, paaritatud mediaanipõhine Δ | commit `de7aca9`, sait `/v2/` |
-| v3 | kuivad ja märjad metsad statistilise analüüsi ühikuna (kuumkaart jt vaated) | selle dokumendi spetsifikatsioon (§ 4.2–4.4) |
-| v4 | tulemustabeli paaritatud vaade | ainult spetsifikatsioon (§ 4.5) |
+| v3 | kuivad ja märjad metsad statistilise analüüsi ühikuna (kuumkaart jt vaated) | spetsifikatsioon (§ 4.1–4.4), rakendamata |
+| v4 | tulemustabeli paaritatud vaade | ainult spetsifikatsioon (§ 4.6) |
 
 ---
 
@@ -89,16 +90,16 @@ Puudus: kuumkaardil on ühes vaates kahe perekonna q-väärtused. Seda tuleb mä
 **Muud mõjud:**
 
 * **Rühmade erinevuse test** (Δ_kuiv − Δ_märg) on uus hüpotees. Tehniliselt on see odav: samad bootstrap-kordused ja
-  sama W annavad erinevuse jaotuse koos kovariatsiooniga. Ülesanne seda ei nõua, seepärast on see lahtine küsimus (K3).
+  sama W annavad erinevuse jaotuse koos kovariatsiooniga. Ülesanne seda ei nõua; v3-s seda ei tehta (K3).
 * **η² (mudelipõhisuse märk)** arvutatakse ökosüsteemi kaupa (`diagnostika.parquet`, `eco_code`). Rühmad kasutavad metsa
   (eco 3) väärtusi. See on konservatiivne lihtsustus ja seda tuleb märkida.
 * **Segumudel** (930 m ja 1 km kihid) on ainult ökosüsteemi tasemel. Rühmadele seda ei hinnata (nagu alamökosüsteemile).
   ‡-kihtidel näidatakse 10 m hinnangut koos märgiga.
-* **Tundlikkusanalüüs** (`analysis.sensitivity`) jääb v2 tasemetele. Rühmade tundlikkus on lahtine küsimus (K5).
+* **Tundlikkusanalüüs** (`analysis.sensitivity`) jääb v2 tasemetele. Rühmadele tehakse sama tundlikkusanalüüs (K5).
 * **Klassifikatsiooni kriteerium.** Jaotus on alamökosüsteemi (kasvukohatüübi) järgi, mitte praeguse veerežiimi järgi.
   Kõdusoomets on kuivendatud turvasmullal mets, aga on märja metsa hulgas. Laane- ja loometsad on „kuivad“ ainult selles
   mõttes, et nad on mineraalmullal ja ei ole liigniisked. Tõlgendus „turvas- ja liigniisked kasvukohad vs mineraalmuld“ on
-  täpsem kui „kuiv vs märg“. Nimetus ja kriteerium tuleb kinnitada (K1). Kood ei sõltu nimest.
+  täpsem kui „kuiv vs märg“. Koosseis on kinnitatud (K1); kriteerium kirjutatakse metoodikasse.
 * **Kooskõla tulemustabeliga.** Rühma seisundi täpne mediaan statistilises analüüsis peab võrduma `kaasnev_suured`
   mediaaniga (31/32 × hea/keskmine/vilets). Mõlemad arvutatakse samast sagedustabelist samade klassikoodide ühendina.
   See on v3 valideerimise kontroll V-R4.
@@ -218,18 +219,20 @@ Tähistused: m_s = stratumi täpne mediaan seisundis s, w = n_a·n_b/(n_a+n_b), 
 
 ## 2. Soovituslik lahendus
 
-**v3.** Lisada statistilisse analüüsi kolmas ühikutase `ruhm` (koodid 31 Kuivad metsad, 32 Märjad metsad, `eco_code = 3`).
-Seda arvutatakse **täpselt v2 hinnangutega**: samad funktsioonid `stats.analyse_layer` ja `stats.analyse_layer_median`,
-sama W ja samad parameetrid. Rühma definitsioon tuleb ühest allikast, mida jagavad `kaasnev` ja `stats`. FDR-perekond on eraldi
-(`ruhm`). Tulemused kirjutatakse **eraldi failidesse** (`*_ruhmad.parquet`), et v2 failid jääksid bitti-bitti samaks. Veebis
-on rühmad ökosüsteemi tasemel kohe metsa järel kõigis vaadetes, mis kasutavad statistilise analüüsi ühikuid, ning tõendusbaasis
-(kvalitatiivne, stsenaarium). Paaritamata rühmahinnangul on toorhinnangu hoiatus.
+**v3.** Statistilisse analüüsi tuleb kolmas ühikutase `ruhm`: 31 Kuivad metsad, 32 Märjad metsad, `eco_code = 3`. Rühmi
+arvutatakse **täpselt v2 hinnangutega**: samad funktsioonid `stats.analyse_layer` ja `stats.analyse_layer_median`, sama W ja
+samad parameetrid. Rühma definitsioon on ühes kohas ja seda kasutavad nii `kaasnev` kui ka `stats`. Mitmese testimise
+parandus (FDR, § 3 K2) tehakse rühmadele eraldi. Kõik tasemed arvutatakse **ühe käsuga** `oks analyse` samadesse
+tulemusfailidesse. v2 tulemused on alles git'is commit'is `de7aca9` ja v3 jooks kontrollib, et ökosüsteemi ja
+alamökosüsteemi read on nendega identsed (§ 4.4). Veebis on rühmad ökosüsteemi tasemel kohe metsa järel kõigis vaadetes,
+mis kasutavad statistilise analüüsi ühikuid, ning tõendusbaasis (kvalitatiivne jaotis, stsenaarium). Paaritamata
+rühmahinnangul on toorhinnangu hoiatus.
 
 **v4.** Tulemustabelisse tuleb näitaja lüliti **„Tase (mediaan)“ | „Muutus (paaritatud)“**. Tasemevaade jääb muutmata (B).
-Paaritatud vaates on rida ühik × seisundipaar ja lahtri põhiväärtus on **D: paaritatud Δ kihi ühikus**. Olulisus on kujunduses
-nähtav, CI, q, Δ % ja paaritatud tasemed M_a → M_b (A) on kohtspikris. Δ % on valikuline lüliti (C). Paaritatud vaade ei toida
-stsenaariumi koguhulka. M_a ja M_b kirjutatakse analüüsist otse lisafaili. Neid ei tuletata Δ/Δ %-ist, sest siis jääks M_a
-määramata kõigil ridadel, kus Δ = 0 (27 %).
+Paaritatud vaates on rida ühik × seisundipaar ja lahtri põhiväärtus on **D: paaritatud Δ kihi ühikus**. Olulisus on
+kujunduses nähtav; CI, q, Δ % ja paaritatud tasemed M_a → M_b (A) on kohtspikris. Δ % on valikuline lüliti (C). Paaritatud
+vaade ei toida stsenaariumi koguhulka. M_a ja M_b arvutatakse juba v3 jooksus (K9) ega tuletata Δ/Δ %-ist, sest siis jääks
+M_a määramata kõigil ridadel, kus Δ = 0 (27 %).
 
 **Põhjendus.** D on ainus näitaja, mis
 
@@ -242,25 +245,34 @@ A ja C jäävad kontekstiks, sest A on paarist sõltuv tase ja C ei ole nulliroh
 
 ---
 
-## 3. Lahtised küsimused
+## 3. Otsused (2026-11-01)
 
-Iga küsimuse juures on vaikimisi ettepanek, mida plaan (§ 7) eeldab, kui teisiti ei otsustata.
-
-| # | Küsimus | Vaikimisi ettepanek |
+| # | Küsimus | Otsus |
 |---|---|---|
-| K1 | Kas kriteerium „alamökosüsteem (kasvukohatüüp)“ ja nimetused „kuivad/märjad metsad“ on õiged? Kas kõdusoomets (kuivendatud turvasmuld) kuulub märgade hulka? Kas „Muu (metsa)kooslus“ jääb rühmadest välja? | Jaotus nagu `kaasnev.FOREST_SPLIT` (lähtekasu kommentaar), Muu välja; kriteerium kirjas metoodikas |
-| K2 | FDR: eraldi perekond `ruhm` või ökosüsteemi perekonnas? | Eraldi (v2 q muutumatud) |
-| K3 | Kas lisada kuiva ja märja metsa erinevuse test (Δ_kuiv − Δ_märg, sama bootstrap)? | Mitte v3-s; võimalik v3.1 |
-| K4 | Kas kuumkaardil on rühmad vaikimisi nähtaval ja kas need peaks olema ka alamökosüsteemi vaates (rühmitus/värv)? | Ökosüsteemi vaates vaikimisi sees, lüliti „Kuivad ja märjad metsad“; alamökosüsteemi vaates ainult rühma märk päises |
-| K5 | Kas rühmadele teha tundlikkusanalüüs? | Jah, samad 5 varianti (+~1 h arvutust); võib jätta v3.1-sse |
-| K6 | Kus ja millal arvutatakse? Kas v2 täisjooksu `data/derived/plokid` (`__val`, `__blkmed`, `__hist`) on alles? | Kui ei ole, siis `oks aggregate` + `oks fields` (~2–3 h, ~25 GB arhiivist) |
-| K7 | Avaldamine: kas v3 tuleb aadressile `/v3/` (`noindex`, ainult otselink) ja kas v3 lehel võib olla link v2-le? Millal vahetatakse peaaadressi sisu? | `/v3/`, `noindex`, link v2-le metoodika jaotises; peaaadress ei muutu |
-| K8 | v4: vaikimisi seisundipaar; kas Δ % lüliti; kas näidata „ei paku“, kui mõlemas seisundis on staatus „ei paku“; kas paaritatud vaade läheb ka Excelisse? | vilets → hea; Δ % lülitina; „ei paku“ eelistatud; Excelisse eraldi leht |
-| K9 | Kas paaritatud tasemed M_a, M_b (ja Σw) arvutada juba v3 jooksu ajal lisafaili, et v4 ei vajaks teist jooksu? Kas tasemetele on vaja bootstrap-CI-d? | Jah, M_a, M_b, Σw lisafaili; CI-d mitte |
-| K10 | Kas allalaaditavatesse CSV-desse lisada veerg `metoodika_versioon`? | Jah, viimase veeruna (v3 sait); v2 CSV muutumatu |
-| K11 | Kas kasutaja loob git-sildid `metoodika-v1` (`5aa4596`) ja `metoodika-v2` (`de7aca9`)? Varem ei olnud siltide loomine sessioonis lubatud. | Jah, käsitsi |
-| K12 | η² rühmadele: metsa (eco 3) väärtus või rühmapõhine η²? | Metsa väärtus koos märkusega |
-| K13 | Stsenaariumi koguhulk: kas tulevikus kasutada paaritatud **keskmiste** vahet (`delta_m`) praeguse paaritamata keskmiste vahe asemel? | Väljaspool v3/v4 ulatust; eraldi otsus |
+| K1 | Rühmade koosseis | **Kinnitatud:** kuivad = salumets, palumets, laanemets, loomets, nõmmemets; märjad = soovikumets, samblasoomets, rohusoomets, kõdusoomets, rabastuv mets. „Muu (metsa)kooslus“ ei kuulu kumbagi rühma (ainult kogu metsa). Sama mis `kaasnev.FOREST_SPLIT`. |
+| K2 | Mitmese testimise parandus (FDR) | **Eraldi rühm „ruhm“.** Selgitus allpool. |
+| K3 | Kuiva ja märja metsa erinevuse test | Mitte v3-s (võimalik hiljem). |
+| K4 | Rühmade kuvamine kuumkaardil | Ökosüsteemi vaates vaikimisi nähtaval, metsa järel; lüliti „Kuivad ja märjad metsad“. |
+| K5 | Tundlikkusanalüüs rühmadele | Jah. Tuleb automaatselt, kui `oks analyse --sensitivity` käivitatakse (§ 4.4). |
+| K6 | Kas plokitabelid on alles? | **Ei ole.** Kontrollitud 2026-11-01: `data/derived` sisaldab ainult klassitabeleid, `plokid`, `__val`, `__blkmed` ja `__hist` puuduvad. Need taastatakse käskudega `oks aggregate` ja `oks fields` (~2–3 h). Arhiiv on kättesaadav (HTTP 200, baaskaardi failide muutmisaeg sama mis inventuuris, 2026-06-30). Konteineris on 4 protsessorit, 15 GB mälu ja ~30 GB vaba kettaruumi. |
+| K7 | Avaldamine | v3 aadressil `/v3/` (`noindex`); v3 lehel link v2-le; peaaadress ei muutu. |
+| K8 | v4 detailid | vilets → hea vaikimisi; Δ % lülitina; „ei paku“ eelistatud; Excelisse eraldi leht. |
+| K9 | M_a, M_b v3 jooksus | **Jah.** |
+| K10 | Versiooniveerg CSV-s | Ei. Versioon on näha lehe päises (§ 4.5). |
+| K11 | Git-sildid | Valikuline; ei ole vajalik, sest versioonid on kindlad commit'id. |
+| K12 | η² rühmadele | Metsa (eco 3) väärtus koos märkusega. |
+| K13 | Stsenaariumi koguhulk | Väljaspool v3/v4 ulatust. |
+
+**K2 selgitus: mis on FDR.** Analüüs teeb tuhandeid olulisuse teste (34 kihti × ühikud × 3 seisundipaari). Kui iga testi
+lävi on 5 %, tuleb puhtalt juhuslikult „olulisi“ tulemusi sadu. Benjamini–Hochbergi parandus (FDR, *false discovery rate*)
+teisendab iga p-väärtuse q-väärtuseks. Kui märgime oluliseks kõik tulemused, mille q < 0,05, on nende hulgas eeldatavalt
+kuni 5 % juhuslikke. Parandus sõltub sellest, milliseid teste koos parandatakse. v2-s on kaks eraldi gruppi: ökosüsteemi
+tase (408 testi) ja alamökosüsteemi tase (3 772 testi). Kuivad ja märjad metsad lisavad kuni 204 testi.
+
+* **Eraldi grupp (valitud):** v2 ökosüsteemi ja alamökosüsteemi q-väärtused ning „oluline“ märked jäävad täpselt samaks.
+* Ökosüsteemi grupiga koos: kõik v2 ökosüsteemi q-väärtused muutuksid veidi ja mõni piiripealne „oluline“ märge võiks muutuda.
+
+Mõlemad on statistiliselt lubatud. Eraldi grupp hoiab v2 tulemused muutumatuna ja on lihtsam selgitada.
 
 ---
 
@@ -268,193 +280,178 @@ Iga küsimuse juures on vaikimisi ettepanek, mida plaan (§ 7) eeldab, kui teisi
 
 ### 4.1 Põhimõtted
 
-1. **Täiendav, mitte muutev.** v2 koodirajad (`stats.analyse_layer`, `stats.analyse_layer_median`, `kaasnev.*`,
-   `analysis.run`) jäävad muutmata. v3 kutsub neid välja uue ühikute objektiga ja kirjutab tulemused uutesse failidesse.
-2. **v2 andmed on külmutatud.** `data/tulemused` v2 failid (sh `paarid.parquet`, `lahtrid.parquet`, `uhikud.parquet`,
-   `jaotused.parquet`, `algklassid.parquet`, `kaasnev_*.parquet`, `parameetrid.csv`, `tundlikkus.csv`) jäävad bitti-bitti
-   samaks. Seda kontrollib SHA-256 manifest ja test (§ 4.7).
-3. **Üks allikas.** Rühmade definitsioon on ühes moodulis ja seda kasutavad nii `kaasnev` kui ka `stats`/`analysis`.
-4. **Versioon on nähtav.** Iga sait ja andmekomplekt teab oma metoodika versiooni.
+1. **Iga versioon on üks kindel commit.** v1 = `5aa4596`, v2 = `de7aca9`, v3 = tulevane commit. Kood ja tulemusfailid
+   (`data/tulemused`) on git'is koos. Seega on iga versioon täielikult taastatav ja tema veebileht ehitatakse alati
+   iseendast.
+2. **Üks analüüsijooks.** Kõik tasemed (ökosüsteem, alamökosüsteem, metsarühm) arvutatakse sama käsuga `oks analyse` ja
+   samast sisendist. See on teaduslikult kõige selgem: üks jooks, üks bootstrap-kaalude maatriks, üks parameetrifail.
+   Arvutuslikult on see ka kõige tõhusam, sest iga kihi sisend loetakse üks kord.
+3. **v2 hinnangud ei muutu.** Uus tase on lisandus. v2 statistilisi funktsioone ei muudeta, ainult laiendatakse
+   (uued veerud M_a, M_b, Σw). Jooksu lõpus kontrollib võrdlusskript, et kõigi ökosüsteemi ja alamökosüsteemi ridade
+   kõik v2 veerud on identsed v2 failidega (§ 4.4).
+4. **Üks definitsioon.** Rühmade koosseis on ühes moodulis ja seda kasutavad `kaasnev` ning `stats`/`analysis`.
 
 ### 4.2 v3 andmevoog
 
 ```
-data/derived/plokid/<kiht>.parquet ─┐
-<kiht>__blkmed.parquet (alam-read) ─┤
-<kiht>__val/  ──► ruhmad.block_medians (plokk × rühm × seisund) ─┤
-<kiht>__hist.parquet ───────────────┤
-                                    ▼
-          analysis.run_groups(): ruhmad.make_group_units(used)  →  Units(eco = rühmad, alam = rühma alamid)
-               stats.analyse_layer(...)          (muutmata, sama W)
-               stats.analyse_layer_median(...)   (muutmata, sama W)
-               → read tasemel "okosusteem" ümber nimetatud tasemeks "ruhm" (31/32)
-               → read tasemel "alam" = kontroll: peavad võrduma v2 alam-ridadega
-               add_fdr(perekond "ruhm")
-                                    ▼
-data/tulemused/{paarid,lahtrid,algklassid,jaotused,uhikud}_ruhmad.parquet   (UUED; v2 failid puutumata)
-data/tulemused/paarid_tasemed.parquet  (M_a, M_b, Σw kõigil tasemetel; v4 jaoks, K9)
-                                    ▼
-export.build_data / kaasnev_export.evidence (loevad *_ruhmad olemasolul) → site/data/*.json, tulemused_paarid.csv
+arhiiv ──► oks aggregate / oks fields (muutmata, v2 kood) ──► data/derived/plokid/<kiht>{.parquet,__val/,__blkmed,__hist}
+                                                                      │
+oks analyse (üks jooks, kiht korraga):                                ▼
+   1. v2 ühikud (ökosüsteem, alam):  stats.analyse_layer + analyse_layer_median          (nagu v2)
+   2. rühmaühikud (31, 32):          samad funktsioonid, ühikud = ruhmad.make_group_units(used),
+                                     plokimediaanid plokk × rühm × seisund = ruhmad.block_medians(__val)
+   3. read liidetakse, unit_level ∈ {okosusteem, alam, ruhm}; FDR iga taseme kaupa
+                                                                      ▼
+data/tulemused/{paarid,lahtrid,algklassid,jaotused,uhikud,klassid,diagnostika}.parquet   (v3; sisaldavad ka ruhm-ridu)
+                                                                      ▼
+scripts/vordle_v2.py: ökosüsteemi ja alam-read vs git show de7aca9:data/tulemused/*   →  peab olema 0 erinevust
+                                                                      ▼
+export / kaasnev_export → site/data/*.json, tulemused_paarid.csv  →  sait /v3/
 ```
 
-**Miks v2 funktsioonid töötavad muutmata.** `analyse_layer*` käsitlevad ökosüsteemi kui klasside rühma (`cls_eco`), mille
-stratumid tulevad alamökosüsteemidest (`cls_alam`, `alam_eco`). Kui `Units.eco_codes = (31, 32)`, `cls_eco` kaardistab kuiva
-metsa alamökosüsteemide klassid 0-le, märja metsa omad 1-le ja ülejäänud −1-le, ning `alam_codes` on kümme rühma alamökosüsteemi,
-annavad funktsioonid ökosüsteemi ridade asemel rühma read. Ainus puuduv sisend on plokimediaan plokk × rühm × seisund
-(`__blkmed` sisaldab ainult rühmitusi `eco` ja `alam`). Selle saab täpselt arvutada sagedustabelist `__val` (kaalutud
-mediaan, sama poolitusreegel mis `aggregate.segment_medians`). Rastreid uuesti lugeda ei ole vaja.
+**Miks v2 funktsioonid sobivad muutmata kujul.** `analyse_layer*` käsitleb ökosüsteemi kui klasside rühma (`cls_eco`), mille
+stratumid tulevad alamökosüsteemidest (`cls_alam`, `alam_eco`). Kui ühikute objektis on `eco_codes = (31, 32)`, `cls_eco`
+kaardistab kuiva metsa alamökosüsteemide klassid 0-le, märja metsa omad 1-le ja ülejäänud −1-le, ning `alam_codes` on kümme
+rühma alamökosüsteemi, annavad samad funktsioonid ökosüsteemi ridade asemel rühma read. Ainus puuduv sisend on plokimediaan
+plokk × rühm × seisund: `__blkmed` sisaldab ainult rühmitusi `eco` ja `alam`. Selle saab täpselt arvutada sagedustabelist
+`__val` (kaalutud mediaan, sama poolitusreegel mis `aggregate.segment_medians`).
 
 ### 4.3 v3 muutuvad failid ja komponendid
 
-| Fail | Muudatus | Mõju v2-le |
+| Fail | Muudatus |
+|---|---|
+| `src/oks/ruhmad.py` (uus) | `GROUPS` (kood, nimi, `eco = 3`, alamkoodid; K1); `make_group_units(used) -> stats.Units`; `block_medians(val_dir, used) -> pl.DataFrame` (veerud nagu `__blkmed`, `grouping = "eco"`, `group = kood·10 + uld`) |
+| `src/oks/kaasnev.py` | `DRY_FOREST`, `WET_FOREST`, `FOREST_SPLIT` võetakse `ruhmad`-ist (nimed jäävad alles); tulemused identsed |
+| `src/oks/stats.py` | `analyse_layer_median` tagastab lisaks veerud `level_a_m_med`, `level_b_m_med`, `sum_w_m_med` (K9; seni arvutati M_a sisemiselt ja visati ära). Muud read ja veerud ei muutu |
+| `src/oks/analysis.py` | `run`: iga kihi kohta teine kutse rühmaühikutega, read tasemega `ruhm`; `unit_table`, `distributions` ja `add_fdr` saavad taseme `ruhm` |
+| `src/oks/export.py` | rühmad `meta.uhikud` lõppu (v2 ühikute järjekord ei muutu); `unit_level` kaardistus `{okosusteem: 0, alam: 1, ruhm: 2}`; CSV read `tase = "ruhm"`; `meta.metoodika = "v3"` |
+| `src/oks/kaasnev_export.py` | `evidence` sisaldab rühmade ridu |
+| `src/oks/report.py` | `docs/tulemused.md` uus jaotis „Kuivad ja märjad metsad“ |
+| `site_src/app.js` | kuumkaart: rühmad ökosüsteemi vaates metsa järel, lüliti, päise märge (↳); kohtspikker: rühma koosseis, eraldi FDR-grupp, η² = metsa väärtus; ühikute valikutes märk `▸`; paaritamata hoiatus ka rühmadel; päises versioonimärk „Metoodika v3“ |
+| `site_src/sections/scenario.js`, `quality.js` | eco 31/32 paaritatud tõendus tasemelt `ruhm`; kvalitatiivse tabeli veerud `[3, 31, 32, 2, 1, 4]` |
+| `scripts/vordle_v2.py` (uus) | v3 ökosüsteemi ja alam-read vs v2 failid commit'ist `de7aca9` |
+| `scripts/valideeri_ruhmad.py` (uus) | V-R2…V-R6 (§ 4.7) |
+| `scripts/valideeri_veeb.py` | V11, V12 (§ 4.7) |
+| `.github/workflows/pages.yml` | samm „Ehita v3 leht HEAD-ist aadressile `/v3/`“ (§ 4.5) |
+| `docs/metoodika_v3_otsused.md` (uus), `docs/metoodika.md` (§ 5.5), `README.md` | otsused, hinnatav suurus, piirangud, versioonid |
+| `data/tulemused/*` | uuesti arvutatud: v2 read identsed, lisandunud `ruhm` read ja veerud M_a, M_b, Σw |
+
+Muutmata jäävad `median.py`, `aggregate.py`, `pipeline.py`, `fields.py`, `catalog.py`, `andmetabel.py` (Excel) ja
+`vordlus.py`. Samuti jäävad muutmata `kaasnev_*.parquet` failid, sest kuivad ja märjad metsad on tulemustabelis juba olemas
+ja `oks kaasnev` käsku ei käivitata. Ka v1 → v2 võrdluse failid (`vordlus_*.csv`) jäävad samaks.
+
+### 4.4 v3 arvutused ja v2 kontroll
+
+* **Paaritatud Δ_g** (§ 1.1), CI, p, `n_strata`, `n_clusters_m`, `enough_m`: v2 loogikaga, ühikuks rühm.
+* **Paaritamata:** rühma × seisundi täpne pikslimediaan klasside ühendist; täpne klastribootstrap, sama W.
+* **Lahtrid, algklassid, jaotused:** nagu ökosüsteemi tasemel.
+* **FDR:** Benjamini–Hochberg eraldi tasemel `ruhm` (K2).
+* **M_a, M_b, Σw (K9):** kõigil tasemetel; peab kehtima `level_b − level_a = delta_m_med`.
+* **Tundlikkus (K5):** `oks analyse --sensitivity` kordab kõiki tasemeid, sh rühmi.
+* **v2 kontroll:** `scripts/vordle_v2.py` loeb v2 failid käsuga `git show de7aca9:data/tulemused/<fail>` ja võrdleb v3
+  failidega kõiki v2 veerge ökosüsteemi ja alamökosüsteemi ridadel (`paarid`, `lahtrid`, `klassid`, `algklassid`,
+  `jaotused`, `diagnostika`, `uhikud`, `tundlikkus.csv`). Nõue: 0 erinevust (ujukomaarvudel abs. tolerants 1e-12).
+  * See kontrollib ka seda, et kogu ahel on **reprodutseeritav**: plokitabelid taastatakse arhiivist nullist ja v2 tulemus peab
+    tulema täpselt sama.
+  * Kui tulemus erineb (nt arhiivi faile on vahepeal muudetud), töö peatatakse, erinevused raporteeritakse ja v3 tulemusi ei
+    salvestata enne otsust.
+* **Arvutuskulu:** aggregate + fields ~2–3 h (README). v2 analüüs võttis 67 min; rühmad lisavad hinnanguliselt 20–40 min.
+  Tundlikkus võttis 60 min, rühmadega veidi rohkem. Rühmade aeg on hinnang, mitte mõõtmine; piloot mõõdab selle.
+
+### 4.5 Versioonid ja tagasiminek v2-le
+
+**Põhimõte:** iga versioon on üks commit vaikeharus (liidetakse „Squash and merge“ valikuga) ja iga avaldatud leht ehitatakse
+oma kindlast commit'ist.
+
+| Aadress | Ehitatakse | Seis |
 |---|---|---|
-| `src/oks/ruhmad.py` (uus) | `GROUPS: dict[int, Group]` (kood, nimi, `eco = 3`, alamkoodid); `make_group_units(used) -> stats.Units`; `block_medians(val_dir, used) -> pl.DataFrame` (veerud nagu `__blkmed`: `grouping="eco"`, `group = kood·10 + uld`) | puudub |
-| `src/oks/kaasnev.py` | `DRY_FOREST`, `WET_FOREST`, `FOREST_SPLIT` imporditakse `ruhmad`-ist (nimed jäävad samaks, aliasena) | tulemused identsed (test) |
-| `src/oks/analysis.py` | uus `run_groups(params, out_dir, cache_dir)`; `add_fdr` saab parameetri `levels` (vaikimisi `("okosusteem", "alam")` nagu praegu); `distributions` saab valikulise rühmade kaardistuse; `_layer_cache` võtmesse lisatakse `config.METHOD_VERSION` | `run()` käitumine muutmata |
-| `src/oks/__main__.py` | uus käsk `oks analyse-groups` (ei kirjuta v2 faile) | puudub |
-| `src/oks/config.py` | `METHOD_VERSION = "v3"` | puudub |
-| `src/oks/export.py` | loeb `*_ruhmad.parquet` olemasolul ja lisab rühmad `meta.uhikud` lõppu (v2 ühikute indeksid ei muutu); `unit_level` kaardistus `{okosusteem: 0, alam: 1, ruhm: 2}`; CSV read `tase = "ruhm"`; `meta.metoodika = METHOD_VERSION` | v2 ridade väärtused samad |
-| `src/oks/kaasnev_export.py` | `evidence` liidab rühmade read (`tase = "ruhm"`) | v2 read samad |
-| `src/oks/report.py` | `docs/tulemused.md` uus jaotis „Kuivad ja märjad metsad“ | genereeritud dokument muutub (ainult lisandub) |
-| `site_src/app.js` | `visUnits`: ökosüsteemi tasemel rühmad metsa järel (järjekord `kaasnev.DISPLAY_ORDER`); lüliti „Kuivad ja märjad metsad“; päise märge (↳, eraldusjoon); kohtspikker: rühma definitsioon, FDR-perekond, η² = metsa väärtus; ühikute valikutes märk `▸`; paaritamata hoiatus ka rühmal; „Tase“ info tekst | v2 sait ehitatakse eraldi commit'ist |
-| `site_src/sections/scenario.js`, `quality.js` | tõendus eco 31/32 korral tasemelt `ruhm`; kvalitatiivse tabeli veerud `[3, 31, 32, 2, 1, 4]` | — |
-| `scripts/valideeri_ruhmad.py` (uus) | V-R1…V-R6 (§ 4.8) täisandmetel | — |
-| `scripts/valideeri_veeb.py` | V11: kuumkaardi rühmalahtrid vs `paarid_ruhmad.parquet` | — |
-| `.github/workflows/pages.yml` | `/v2/` ehitatakse kinnitatud commit'ist `V2_COMMIT=de7aca9`, `/v3/` HEAD-ist; kontrollid kõigile kolmele | v1 ja v2 lehed sisuliselt samad |
-| `docs/metoodika_v3_otsused.md` (uus), `docs/metoodika.md` (uus § 5.5), `README.md` | otsused, hinnatav suurus, piirangud, versioonitabel | — |
-| `data/tulemused/MANIFEST_v2.sha256` (uus) | v2 failide räsid | — |
+| `/` | commit `5aa4596` (v1) | nagu praegu |
+| `/v2/` | commit `de7aca9` (v2) | **tehtud** (harus `claude/confident-sagan-iituxn`, jõustub liitmisel) |
+| `/v3/` | vaikeharu viimane commit | lisatakse v3 commit'iga |
 
-`stats.py`, `median.py`, `aggregate.py`, `pipeline.py`, `fields.py`, `catalog.py`, `andmetabel.py`, `vordlus.py` ja
-`sitebuild.py` ei muutu. Excel ei muutu, sest seal ei ole paaritatud hinnanguid ja suurte ökosüsteemide lehel on 31/32 juba olemas.
+* **v2 on v3-st sõltumatu.** Varem ehitati `/v2/` vaikeharu viimasest commit'ist, nii et iga uus muudatus oleks sinna jõudnud.
+  Nüüd ehitatakse see alati commit'ist `de7aca9` ja vaikeharu muudatused seda lehte ei mõjuta. Kontrollitud kohaliku
+  kuivjooksuga 2026-11-01: v1, v2 ja kontrollehitus õnnestusid; `/v2/` andmefailid (`paarid`, `lahtrid`, `kaasnev`,
+  `tendus.json`) ja `app.js` on identsed seni avaldatud v2-ga.
+* **Tagasiminek v2-le:** üks käsk `git revert <v3 commit>` ja push.
+  * Vaikeharu kood ja tulemusfailid on siis täpselt v2 omad, sest tulemusfailid on git'is.
+  * `/v3/` kaob järgmise Pages-ehitusega, sest selle ehitamise samm on v3 commit'i osa.
+  * `/v2/` ja `/` ei muutu kordagi.
+* **Versioonimärk:** v3 lehe päises on tekst „Metoodika v3“ ja metoodika jaotises link v2 lehele. v1 ja v2 lehti ei muudeta.
+* **Peaaadressi vahetus** (hilisem otsus): töövoos muudetakse ühe sammu commit'i.
 
-### 4.4 v3 arvutused
-
-* **Paaritatud Δ_g** (§ 1.1), CI, p, `n_strata`, `n_clusters_m`, `enough_m`: muutmata `analyse_layer*` loogikaga, ühikuks rühm.
-* **Paaritamata:** rühma × seisundi täpne pikslimediaan klasside ühendist ja täpne klastribootstrap
-  (`median.cluster_boot_medians_seg`), sama W.
-* **Lahtrid:** n, keskmine, SD, mediaan, mediaan > 0, plokimediaanide kvantiilid (plokk × rühm).
-* **Algklassid:** mediaan algse seisundiklassi kaupa rühma sees.
-* **Jaotused:** klasside histogrammid rühma tasemele. Peab võrduma rühma alamökosüsteemide summaga.
-* **FDR:** BH perekonnas `ruhm`, kõigi kuue p-veeru jaoks eraldi nagu v2 (`analysis._FDR`).
-* **v4 ettevalmistus (K9):** `paarid_tasemed.parquet` = (`layer_id`, `unit_level`, `unit_code`, `pair`, `level_a_m_med`,
-  `level_b_m_med`, `sum_w_m_med`) kõigil tasemetel. Arvutatakse ainult `__blkmed`-ist, ilma bootstrapita. Peab kehtima
-  `level_b − level_a = delta_m_med` (tolerants 1e-9 suhteliselt).
-* **Arvutuskulu:** v2 põhijooks võttis 67 min (34 kihti). Rühmade läbikäik arvutab kaks rühma ja kordab rühma alamökosüsteemide
-  paaritamata bootstrapi (kontrolliks). Hinnanguliselt 20–40 min. See on eeldus, mida pole mõõdetud.
-
-### 4.5 v4 disain (ainult spetsifikatsioon)
+### 4.6 v4 disain (ainult spetsifikatsioon)
 
 **Kasutajaliides (`site_src/sections/results.js`):**
 
 * Uus segmentnupp „Näitaja“: **Tase (mediaan)** (vaikimisi, praegune vaade) | **Muutus (paaritatud)**.
 * Paaritatud vaates:
-  * Rida „Tüübid“ tähendab tase `alam` (39 alamökosüsteemi, millel on ≥ 2 seisundit). Rida „Suured ökosüsteemid“ tähendab
-    tasemeid `okosusteem` 1–4 ja `ruhm` 31/32 (vajab v3 andmeid).
+  * Rida „Tüübid“ tähendab taset `alam` (39 alamökosüsteemi, millel on ≥ 2 seisundit). Rida „Suured ökosüsteemid“ tähendab
+    tasemeid `okosusteem` 1–4 ja `ruhm` 31/32.
   * Rannikul ning asustusel ja muul paaritatud hinnangut ei ole. Selle kohta on märkus.
   * Filter „Seisund“ asendub filtriga „Seisundipaar“ (kiibid, vaikimisi vilets → hea, mitu korraga lubatud: rida = ühik × paar).
-    Seisundid määramata ja hindamata ei kehti.
 * **Lahter:** Δ kihi ühikus koos märgiga.
   * Oluline (q < 0,05): täisvärv suuna skaalal (oranž–sinine, `docs/disain.md`). Värv tähendab väärtuse suunda, mitte hüve
     suunda.
   * Mitteoluline: kahvatu tekst.
   * `enough_m = false`: „–“ ja kohtspikker „andmeid ei piisa (alla 20 paari või 5 klastri)“.
   * Hinnang puudub: tühi.
-  * Kui mõlemas seisundis on tasemevaate staatus „ei paku“: tekst „ei paku“ (K8).
-* **Lüliti „Δ | Δ %“**. Δ % ei kuvata, kui M_a = 0 („alus 0“). Väärtus esitatakse kärpimata, kuid üle ±500 % märgitakse
-  „ebastabiilne alus“.
+  * Mõlemas seisundis tasemevaate staatus „ei paku“: tekst „ei paku“.
+* **Lüliti „Δ | Δ %“**. Δ % ei kuvata, kui M_a = 0 („alus 0“). Üle ±500 % märgitakse „ebastabiilne alus“.
 * **Kohtspikker:**
   * Δ ja 95 % CI, p, q;
   * Δ % ja selle alus M_a;
   * paaritatud tasemed M_a → M_b („plokimediaanide kaalutud keskmine samades paarides“);
   * paaritamata mediaanid („kogu klassi mediaanid, vt tasemevaade“);
   * paaride ja klastrite arv;
-  * †/‡/§, η² hoiatus. Ühiku ja rühma tasemel ka FDR-perekond.
-* **Pealkiri ja alapealkiri:** „Paaritatud muutus: tüüpiline muutus samas 1 km plokis ja alamökosüsteemis“ ning hoiatus, et
-  mediaanide muutust ei tohi korrutada pindalaga.
-* **CSV (praegune vaade):** ühik, paar, kiht, Δ, CI, q, oluline, Δ %, M_a, M_b, paare, klastreid, `metoodika_versioon`.
-* **Excel (K8):** uus leht „Paaritatud muutus“ (pikk tabel). Olemasolevad lehed jäävad muutmata.
+  * †/‡/§ ja η² hoiatus.
+* **Pealkiri:** „Paaritatud muutus: tüüpiline muutus samas 1 km plokis ja alamökosüsteemis“ ning hoiatus, et mediaanide
+  muutust ei tohi korrutada pindalaga.
+* **CSV (praegune vaade):** ühik, paar, kiht, Δ, CI, q, oluline, Δ %, M_a, M_b, paare, klastreid.
+* **Excel:** uus leht „Paaritatud muutus“ (pikk tabel); olemasolevad lehed ei muutu.
 
-**Andmed:** `paarid.json` saab veerud `level_a_m_med`, `level_b_m_med` (failist `paarid_tasemed.parquet`). Tulemustabeli read
-seotakse ühikutega `meta.uhikud` kaudu (`tase`, `kood` ↔ `alam_kood` / `okosusteem_kood` / 31, 32). Uusi statistilisi
-arvutusi brauseris ei tehta.
+**Andmed:** `paarid.json` saab veerud `level_a_m_med`, `level_b_m_med` (v3 jooksust). Uut analüüsijooksu v4 ei vaja.
+Brauseris statistilisi arvutusi ei tehta.
 
-**Mida v4 ei muuda:** tasemevaadet, `kaasnev.json`, stsenaariumi arvutust, kuumkaarti ega ühtegi `data/tulemused` v2/v3 faili.
+**Mida v4 ei muuda:** tasemevaadet, `kaasnev.json`, stsenaariumi arvutust, kuumkaarti ega tulemusfaile.
+**Versioon:** v4 on omaette commit; `/v3/` kinnitatakse siis v3 commit'ile ja `/v4/` ehitatakse vaikeharust (sama muster).
 
-### 4.6 Versioonide vahetamine
-
-* **Koodis:** `config.METHOD_VERSION` (`"v3"`, hiljem `"v4"`). Väärtus kirjutatakse `meta.json`-i (`metoodika`) ja
-  CSV veergu (K10). Saidi päises ja jaotises „Meetod“ on versioonimärk. v1 ja v2 lehed jäävad muutmata, seega märki neil ei ole.
-* **Andmetes:** v2 failid on külmutatud (manifest). v3 lisab ainult uusi faile. Sait kasutab v3 faile ainult siis, kui need on
-  olemas. v2 commit'ist ehitatud sait neid ei loe.
-* **Avaldamisel (`pages.yml`):** iga versioon ehitatakse oma commit'ist eraldi git-worktree'st, nagu v1-ga juba praegu.
-
-  | Aadress | Allikas | Märge |
-  |---|---|---|
-  | `/` | `V1_COMMIT=5aa4596` | muutmata, kuni peaaadressi vahetus otsustatakse |
-  | `/v2/` | `V2_COMMIT=de7aca9` (**uus kinnitus**; praegu ehitatakse HEAD-ist) | `noindex` |
-  | `/v3/` | HEAD (vaikeharu) | `noindex` |
-  | `/v4/` | ainult pärast v4 rakendamist | — |
-
-  **Tähtis:** `/v2/` tuleb kinnitada commit'ile **enne** v3 liitmist. Muidu ehitaks töövoog v3 koodi aadressile `/v2/`.
-* **Peaaadressi vahetus** (hilisem otsus): `/` ehitatakse soovitud versiooni commit'ist ja eelmine viiakse oma alamaadressile.
-  See on üks muudatus töövoos.
-* **Tagasipööramine:** v3 on üks squash-commit. `git revert <v3>` taastab v2 koodi. v2 andmefailid on niikuinii muutmata ja
-  `/v2/` ehitatakse kinnitatud commit'ist, seega v3 tagasivõtmine ei mõjuta v2 lehte.
-
-### 4.7 Olemasolevate tulemuste kaitse
-
-1. **v2 koodirada muutmata.** Kontroll: `git diff de7aca9 -- src/oks/stats.py src/oks/median.py src/oks/aggregate.py`
-   on tühi. `analysis.run` muudetakse ainult lisaparameetrite kaudu, mille vaikeväärtus säilitab käitumise.
-2. **Manifest.** `data/tulemused/MANIFEST_v2.sha256` (`sha256sum` v2 failidest commit'is `de7aca9`). Test
-   `tests/test_v2_frozen.py` võrdleb. CI ebaõnnestub, kui mõni v2 fail muutub.
-3. **`oks analyse` ei käivitata v3 töös.** Rühmad arvutab ainult `oks analyse-groups`, mis kirjutab ainult `*_ruhmad` ja
-   `paarid_tasemed` failid. Käsu dokumentatsioonis on see hoiatus.
-4. **Sisemine kontroll.** Rühmade läbikäigu alam-read peavad võrduma v2 `paarid.parquet` / `lahtrid.parquet` vastavate
-   ridadega (abs. tolerants 1e-12; BLAS-i järjekord võib viimast bitti muuta).
-5. **Saidi võrdlus.** v3 `paarid.json` / `lahtrid.json` read v2 ühikute kohta võrduvad v2 saidi failidega (skript,
-   v2 ühikute indeksid ei muutu).
-6. **Vahemälu.** `_layer_cache` võtmesse lisatakse `METHOD_VERSION`. Enne jooksu kustutatakse `data/cache/analyys`.
-
-### 4.8 Testid
+### 4.7 Testid
 
 **Ühiktestid (sünteetilised, `tests/test_ruhmad.py`):**
 
 | Test | Mida kontrollib |
 |---|---|
 | `test_group_definition_single_source` | `kaasnev.FOREST_SPLIT` ≡ `ruhmad.GROUPS`; rühmad ei kattu; Muu (31100, 31200) ei kuulu rühma |
-| `test_group_of_one_alam_equals_alam` | rühm ühest alamökosüsteemist: paaritatud ja paaritamata read = alam-read (täpne võrdus) |
-| `test_group_of_all_alams_equals_eco` | rühm = kõik ökosüsteemi alamökosüsteemid (≥ 2 seisundit) → read = ökosüsteemi read |
+| `test_group_of_one_alam_equals_alam` | rühm ühest alamökosüsteemist → paaritatud ja paaritamata read = alam-read |
+| `test_group_of_all_alams_equals_eco` | rühm = kõik ökosüsteemi alamökosüsteemid → read = ökosüsteemi read |
 | `test_forest_decomposition` | Δ_mets = Σ W_g·Δ_g / Σ W_g (rühmad + Muu), W = `sum_w_m_med` |
-| `test_group_block_medians_exact` | `ruhmad.block_medians` sagedustabelist = `aggregate.segment_medians` laiendatud pikslitel = `numpy.median` |
-| `test_fdr_family_separate` | `add_fdr` koos `ruhm` ridadega: `okosusteem` ja `alam` q-väärtused identsed ilma nendeta arvutatutega |
-| `test_bootstrap_reproducible` | sama seeme ja W → identne CI/p |
-| `test_group_cells_match_big_classes` | rühma seisundi mediaan = `kaasnev.median_table` 31/32 mediaan sama sagedustabeli peal |
+| `test_group_block_medians_exact` | `ruhmad.block_medians` sagedustabelist = `numpy.median` toorpikslitel |
+| `test_fdr_groups_separate` | `ruhm` read ei muuda ökosüsteemi ja alam-tasemete q-väärtusi |
+| `test_levels_consistent` | `level_b − level_a = delta_m_med`; `rel_m_med = delta_m_med / |level_a|` |
+| `test_new_columns_do_not_change_old` | `analyse_layer_median` vanad veerud on enne ja pärast laiendust identsed |
+| `test_group_cells_match_big_classes` | rühma seisundi mediaan = `kaasnev.median_table` 31/32 mediaan |
 | `test_distribution_group_is_sum_of_alams` | rühma jaotus = alamökosüsteemide jaotuste summa |
-| `test_v2_frozen` | v2 andmefailide SHA-256 = manifest |
-| `test_export_units_appended` | `meta.uhikud`: v2 ühikud samadel indeksitel, rühmad lõpus (`tase = "ruhm"`, `eco = 3`); `unit_level` kood 2 |
-| `test_kaasnev_unchanged_after_refactor` | `kaasnev.big_classes` / `_big_groups` väljund enne ja pärast importi `ruhmad`-ist identne |
+| `test_export_units_appended` | `meta.uhikud`: v2 ühikud samadel kohtadel, rühmad lõpus |
+| `test_kaasnev_unchanged_after_refactor` | `kaasnev.big_classes` väljund identne |
 
-**Andmekontroll täisandmetel (`scripts/valideeri_ruhmad.py`):**
+**Andmekontroll täisandmetel:**
 
-* V-R1: alam-read vs v2 (punkt 4.7.4).
-* V-R2: pesastatus Δ_mets.
-* V-R3: `n_strata`: mets = kuiv + märg + Muu.
-* V-R4: rühma mediaanid vs `kaasnev_suured`.
-* V-R5: rühma jaotus vs alamökosüsteemide summa.
-* V-R6: `level_b − level_a = delta_m_med`.
+* V-R1 `scripts/vordle_v2.py`: v2 read identsed (§ 4.4).
+* `scripts/valideeri_ruhmad.py`:
+  * V-R2: Δ_mets pesastatus;
+  * V-R3: `n_strata` mets = kuiv + märg + Muu;
+  * V-R4: rühma mediaanid = `kaasnev_suured`;
+  * V-R5: rühma jaotus = alamökosüsteemide summa;
+  * V-R6: `level_b − level_a = delta_m_med`.
 
-Eesmärk on kõigil 0 lahknevust.
+Kõigil on nõue 0 erinevust.
 
-**Veebikontroll:** `valideeri_veeb.py` V11 (kuumkaardi rühmalahtrid ja kohtspikrid) ja V12 (stsenaariumi paaritatud tõendus
-31/32 kohta). Pärast v4 rakendamist lisanduvad V13 (paaritatud vaate lahtrid = `paarid.json`) ja V14 (paaritatud vaate CSV).
+**Veebikontroll** (`valideeri_veeb.py`):
 
-**v4 testid (spetsifikatsioon):**
-
-* `level_b − level_a = delta_m_med`;
-* `rel_m_med = delta_m_med / |level_a|` (kui `level_a ≠ 0`);
-* paaritatud vaates on read ainult ühikutel, millel on hinnang;
-* seisundifilter ei mõjuta paaritatud vaadet;
-* tasemevaate HTML on enne ja pärast v4 identne (snapshot).
+* V11: kuumkaardi rühmalahtrid = `paarid.parquet`;
+* V12: stsenaariumi tõendus 31/32 kohta;
+* pärast v4: V13 (paaritatud vaate lahtrid) ja V14 (paaritatud vaate CSV).
 
 ---
 
@@ -462,18 +459,14 @@ Eesmärk on kõigil 0 lahknevust.
 
 | Osa | v3 | v4 |
 |---|---|---|
-| v2 hinnangud (`paarid`, `lahtrid` jt) | muutumatud (manifest) | muutumatud |
-| v2 q-väärtused ja olulisus | muutumatud (eraldi perekond) | muutumatud |
-| Tulemustabel, tasemevaade | muutumatu | muutumatu (uus lüliti, vaikimisi tase) |
-| Excel | muutumatu | lisandub leht (K8) |
-| Kuumkaart ja teised statistilise analüüsi vaated | lisanduvad 2 veergu/ühikut | — |
-| Kvalitatiivne, stsenaarium | rühmade tõendus täidab praeguse tühimiku | — |
-| `tulemused_paarid.csv` | lisanduvad read `tase = ruhm` (+ versiooniveerg, K10) | — |
-| v1→v2 võrdlus (`vordlus.*`) | muutumatu (rühmadel puudub v1 vaste) | muutumatu |
+| v2 hinnangud ja olulisusmärked | samad (kontroll V-R1) | samad |
+| v2 veebileht `/v2/` | ei muutu (ehitatakse `de7aca9`-st) | ei muutu |
+| Tulemustabel (tasemevaade), Excel | ei muutu | lisandub lüliti ja Exceli leht |
+| Kuumkaart ja teised statistilise analüüsi vaated | lisanduvad kuivad ja märjad metsad | — |
+| Kvalitatiivne jaotis, stsenaarium | rühmade paaritatud tõendus täidab praeguse tühimiku | — |
+| `tulemused_paarid.csv` | lisanduvad read `tase = ruhm` | — |
 | `docs/tulemused.md` | lisandub jaotis | — |
-| Sait v1 (`/`) ja v2 (`/v2/`) | muutumatud; `/v2/` kinnitatakse commit'ile | muutumatud |
-| Arvutuskeskkond | vajab `data/derived/plokid` (K6) | ainult kui M_a/M_b ei arvutatud v3-s |
-| Välised tarbijad, kes loevad `tulemused_paarid.csv` ilma `tase` filtrita | näevad uusi ridu | — |
+| Arvutus | plokitabelite taastamine (~2–3 h) ja täisanalüüs | uut jooksu ei vaja |
 
 ---
 
@@ -481,51 +474,47 @@ Eesmärk on kõigil 0 lahknevust.
 
 | Risk | Tõenäosus / mõju | Leevendus |
 |---|---|---|
-| `/v2/` hakkab näitama v3 koodi (töövoog ehitab HEAD-ist) | kõrge, kui ei tehta / kõrge | `V2_COMMIT` kinnitus esimese sammuna, enne v3 liitmist |
-| v2 tulemusfailid kirjutatakse üle (`oks analyse` käivitatakse kogemata) | keskmine / kõrge | eraldi käsk, manifest-test CI-s, hoiatus README-s |
-| Plokitabelid puuduvad, taastamine ebaõnnestub (arhiiv, ketas) | keskmine / keskmine | K6; jooks jätkatav (vahemälu); kontroll `pipeline.done()` |
+| Arhiivist taastatud plokitabelid ei reprodutseeri v2 tulemust | madal / kõrge | V-R1; erinevuse korral peatus ja otsus enne salvestamist |
+| Konteiner taaskäivitub pika jooksu ajal | keskmine / madal | aggregate jätkab valmis kihtidest, analüüsil on kihtide vahemälu |
+| Kettaruum (~30 GB) ei piisa | madal / keskmine | aggregate kustutab toorfailid; jälgida jooksu ajal |
 | Kasutaja keskmistab kuiva ja märja metsa või loeb metsa hinnangut pindalakaalutud keskmisena | keskmine / keskmine | kohtspikker ja metoodika: täpsuskaal, Muu osa, pesastatus |
-| Paaritamata rühmahinnangut loetakse seisundi mõjuna (koosseis!) | kõrge / keskmine | hoiatus nagu ökosüsteemi tasemel, paaritatud vaikimisi |
-| Kahe FDR-perekonna q-väärtused ühes vaates | madal / madal | märgend kohtspikris ja metoodikas |
-| „Kuiv/märg“ nimetus eksitab (kõdusoomets) | keskmine / madal | K1; definitsioon igal pool kohtspikris |
-| v4: paaritatud Δ-d korrutatakse pindalaga või aetakse segi tasemetega | keskmine / kõrge | eraldi vaade, „muutus“ pealkirjas, hoiatus, ei toida stsenaariumi |
+| Paaritamata rühmahinnangut loetakse seisundi mõjuna (koosseis) | kõrge / keskmine | hoiatus, paaritatud vaikimisi |
+| v4: paaritatud Δ korrutatakse pindalaga või aetakse segi tasemetega | keskmine / kõrge | eraldi vaade, „muutus“ pealkirjas, hoiatus, ei toida stsenaariumi |
 | v4: Δ % tühjad ja äärmuslikud lahtrid | kõrge (18 % / 19 % ridadest) / madal | Δ vaikimisi, Δ % lülitina koos märgistusega |
-| v4: M_a tuletatakse Δ/Δ %-ist | — / keskmine (27 % ridadel määramata) | M_a, M_b otse analüüsist (K9) |
-| BLAS-i järjekord muudab alam-kontrollis viimast bitti | madal / madal | kontroll tolerantsiga 1e-12; v2 failid on niikuinii muutmata |
-| Arvutusaja hinnang (20–40 min) on vale | keskmine / madal | mõõta piloodil ühe kihiga (`--only`) |
+| Rühmade arvutusaja hinnang on vale | keskmine / madal | piloot ühe kihiga |
 
 ---
 
 ## 7. Claude Code'i muudatuste plaan
 
-Töö haru: määrab kasutaja (nt `claude/metoodika-v3`). Iga samm on eraldi commit ja märgitakse tehtuks alles pärast kontrolli.
-v4 sammud (V4-*) on ainult spetsifikatsioon ja neid ei rakendata enne eraldi otsust.
+Iga samm on eraldi commit ja märgitakse tehtuks alles pärast kontrolli. V4 sammud on ainult spetsifikatsioon.
 
 | # | Samm | Valmis, kui | Kontroll |
 |---|---|---|---|
-| V3-0 | Otsused K1–K13 kirja: `docs/metoodika_v3_otsused.md` | kasutaja kinnitas | — |
-| V3-1 | `pages.yml`: `/v2/` commit'ist `V2_COMMIT=de7aca9`, HEAD → `/v3/`, kontrollid kolmele saidile | töövoog roheline, `/v2/` sisu = `de7aca9` ehitus | kohalik kuiv jooks (worktree) |
-| V3-2 | `MANIFEST_v2.sha256` ja `tests/test_v2_frozen.py` | test roheline `de7aca9` andmetel | `uv run pytest -q` |
-| V3-3 | `src/oks/ruhmad.py` (`GROUPS`, `make_group_units`, `block_medians`); `kaasnev` impordib definitsiooni sealt | `test_group_definition_single_source`, `test_kaasnev_unchanged_after_refactor`, `test_group_block_medians_exact` | pytest, ruff, mypy |
-| V3-4 | `analysis.run_groups`, `add_fdr(levels=…)`, `distributions` rühmadega, `_layer_cache` + versioon, käsk `oks analyse-groups`, `config.METHOD_VERSION` | ühiktestid § 4.8 rohelised sünteetilistel andmetel | pytest, ruff, mypy; `git diff de7aca9 -- src/oks/stats.py` tühi |
-| V3-5 | `paarid_tasemed.parquet` (K9) | `level_b − level_a = delta_m_med` testis | pytest |
-| V3-6 | Piloot: `oks analyse-groups --only <1 nullirohke + 1 pidev kiht>` | aeg mõõdetud, V-R1…V-R6 0 lahknevust | `scripts/valideeri_ruhmad.py` |
-| V3-7 | Täisjooks (vajab K6 andmeid) | 34 kihti, `*_ruhmad.parquet` olemas; manifest-test roheline | V-R1…V-R6, `test_v2_frozen` |
-| V3-8 | `export.py`, `kaasnev_export.py`: rühmad JSON-is, CSV-s ja tõendusbaasis | `test_export_units_appended`; v2 ühikute JSON-read = v2 sait | pytest, võrdlusskript |
-| V3-9 | Sait: `app.js` (kuumkaart, valikud, kohtspikrid, hoiatused, versioonimärk), `scenario.js`, `quality.js` | brauseris JS-vigu 0, telefonilaius ilma horisontaalse kerimiseta, hele/tume teema | `valideeri_veeb.py` V8–V12 |
-| V3-10 | `report.py` (tulemused.md jaotis), `docs/metoodika.md` § 5.5, README versioonitabel | dokumendid vastavad koodile | käsitsi läbivaatus |
-| V3-11 | Lõppkontroll ja aruanne `docs/metoodika_v3_lopparuanne.md` (muudetud failid, mõjutabel, kontrollnimekiri, tagasipööramine) | kõik testid, kontrollskriptid, CI ja Pages rohelised | `uv run pytest -q && uv run ruff check . && uv run ruff format --check . && uv run mypy src` |
-| V4-1 | (spetsifikatsioon) `results.js`: lüliti „Näitaja“, paaritatud vaade § 4.5 | tasemevaate snapshot muutumatu | V13, V14 |
-| V4-2 | (spetsifikatsioon) `export.py`: `level_a_m_med`, `level_b_m_med` `paarid.json`-i | v4 testid § 4.8 | pytest |
-| V4-3 | (spetsifikatsioon) Excel leht „Paaritatud muutus“ (K8) | olemasolevad lehed identsed | `valideeri_veeb.py` V10 |
-| V4-4 | (spetsifikatsioon) `pages.yml`: `/v4/`; `METHOD_VERSION = "v4"` | — | — |
+| V3-1 | `pages.yml`: `/v2/` commit'ist `de7aca9` | **tehtud** | kohalik kuivjooks, `/v2/` = senine v2 |
+| V3-2 | `docs/metoodika_v3_otsused.md` (§ 3) | kirjas | — |
+| V3-3 | `ruhmad.py`; `kaasnev` võtab definitsiooni sealt | testid § 4.7 (definitsioon, plokimediaanid, kaasnev) | pytest, ruff, mypy |
+| V3-4 | `stats.analyse_layer_median` lisaveerud; `analysis.run` rühmatase, FDR, jaotused, ühikute tabel | kõik § 4.7 ühiktestid | pytest, ruff, mypy |
+| V3-5 | `scripts/vordle_v2.py`, `scripts/valideeri_ruhmad.py` | skriptid töötavad v2 failidel | — |
+| V3-6 | Plokitabelite taastamine: `oks aggregate`, `oks fields` | kõik 35 kihti valmis (`pipeline.done()`) | logi |
+| V3-7 | Piloot: `oks analyse` kahe kihiga (üks nullirohke, üks pidev) | aeg mõõdetud, V-R1…V-R6 0 erinevust | skriptid |
+| V3-8 | Täisjooks `oks analyse --sensitivity` | 34 kihti; V-R1…V-R6 0 erinevust | skriptid |
+| V3-9 | `export.py`, `kaasnev_export.py` | rühmad JSON-is, CSV-s, tõendusbaasis | pytest |
+| V3-10 | Sait (`app.js`, `scenario.js`, `quality.js`); `pages.yml` `/v3/` | JS-vigu 0, telefonilaius, hele/tume teema | `valideeri_veeb.py` V8–V12 |
+| V3-11 | `report.py`, `docs/metoodika.md`, README | dokumendid vastavad koodile | läbivaatus |
+| V3-12 | Lõpparuanne `docs/metoodika_v3_lopparuanne.md` | kõik testid, kontrollid, CI rohelised | `uv run pytest -q && uv run ruff check . && uv run ruff format --check . && uv run mypy src` |
+| V4-1 | (spetsifikatsioon) `results.js` paaritatud vaade § 4.6 | tasemevaade muutumatu | V13, V14 |
+| V4-2 | (spetsifikatsioon) `export.py`: M_a, M_b `paarid.json`-i | v4 testid | pytest |
+| V4-3 | (spetsifikatsioon) Exceli leht „Paaritatud muutus“ | olemasolevad lehed identsed | V10 |
+| V4-4 | (spetsifikatsioon) `pages.yml`: `/v3/` kinnitatakse commit'ile, `/v4/` vaikeharust | — | — |
 
-**Käsud (V3-7):**
+**Käsud (V3-6…V3-8):**
 
 ```bash
-rm -rf data/cache/analyys
-uv run python -m oks analyse-groups          # ainult *_ruhmad.parquet ja paarid_tasemed.parquet
+uv run python -m oks aggregate
+uv run python -m oks fields
+uv run python -m oks analyse --sensitivity
+uv run python scripts/vordle_v2.py
 uv run python scripts/valideeri_ruhmad.py
-uv run pytest -q tests/test_v2_frozen.py
 uv run python -m oks report && uv run python -m oks site --out site
 ```
