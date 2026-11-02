@@ -1,7 +1,7 @@
 # Metoodika v3 ja v4: analüüs ja tehniline ettepanek
 
-**Seis:** ettepanek; otsused tehtud 2026-11-01 (§ 3). Ainus tehtud muudatus: `/v2/` leht ehitatakse kindlast
-commit'ist `de7aca9` (§ 4.5). Analüüsikoodi ja tulemusfaile ei ole muudetud.
+**Seis (2026-11-02):** otsused tehtud (§ 3). **v3 on rakendatud ja kontrollitud** (sammud V3-1…V3-12; tulemused ja
+kontrollid: [metoodika_v3_lopparuanne.md](metoodika_v3_lopparuanne.md)). v4 on ainult spetsifikatsioon (§ 4.6).
 **Võrdlusalus:** metoodika v2, commit `de7aca9` (vaikeharu HEAD 2026-11-01). Metoodika v1 on commit `5aa4596`.
 **Arvud:** kõik selle dokumendi arvud on arvutatud repo failidest `data/tulemused/paarid.parquet` ja `uhikud.parquet`
 (v2 täisjooks, 34 kihti, 4 180 paari). Uued failide, funktsioonide ja veergude nimed on **ettepanekud**, mitte olemasolev kood.
@@ -10,7 +10,7 @@ commit'ist `de7aca9` (§ 4.5). Analüüsikoodi ja tulemusfaile ei ole muudetud.
 |---|---|---|
 | v1 | keskmised, NoData välja | commit `5aa4596`, sait peaaadressil |
 | v2 | täpsed pikslimediaanid, NoData = 0, paaritatud mediaanipõhine Δ | commit `de7aca9`, sait `/v2/` |
-| v3 | kuivad ja märjad metsad statistilise analüüsi ühikuna (kuumkaart jt vaated) | spetsifikatsioon (§ 4.1–4.4), rakendamata |
+| v3 | kuivad ja märjad metsad statistilise analüüsi ühikuna (kuumkaart jt vaated) | rakendatud (§ 4.1–4.4), sait `/v3/` |
 | v4 | tulemustabeli paaritatud vaade | ainult spetsifikatsioon (§ 4.6) |
 
 ---

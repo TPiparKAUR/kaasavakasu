@@ -1,15 +1,16 @@
 # Tulemuste kokkuvõte
 
-Genereeritud `oks.report.write_results`-ga failist `data/tulemused/paarid.parquet`. Meetod: [metoodika.md](metoodika.md). Metoodika v2: hinnangud põhinevad täpsetel pikslimediaanidel (otsused: [metoodika_v2_otsused.md](metoodika_v2_otsused.md)).
+Genereeritud `oks.report.write_results`-ga failist `data/tulemused/paarid.parquet`. Meetod: [metoodika.md](metoodika.md). Metoodika v2: hinnangud põhinevad täpsetel pikslimediaanidel (otsused: [metoodika_v2_otsused.md](metoodika_v2_otsused.md)). Metoodika v3: lisandusid kuivad ja märjad metsad (tase `ruhm`, oma FDR-perekond; otsused: [metoodika_v3_otsused.md](metoodika_v3_otsused.md)).
 
 ## 1. Ulatus
 
-* 34 teenust, 43 ökosüsteemi/alamökosüsteemi üksust (taseme kaupa), 4180 seisundipaari hinnangut.
+* 34 teenust, 45 ökosüsteemi/alamökosüsteemi üksust (taseme kaupa), 4384 seisundipaari hinnangut.
 * Parameetrid: klaster 10×10 km, 4000 bootstrapi, min 1,0 ha, FDR α = 0,05.
 
 | Tase | Hinnanguid | Paaritatud: piisavalt andmeid | …neist olulisi (q<0,05) | Paaritamata: piisavalt andmeid | …neist olulisi | Oluline mõlemal ja sama märk |
 |---|---|---|---|---|---|---|
 | Ökosüsteem | 408 | 391 | 184 | 398 | 168 | 98 |
+| Kuivad ja märjad metsad | 204 | 204 | 129 | 204 | 111 | 85 |
 | Alamökosüsteem | 3772 | 3043 | 991 | 3278 | 844 | 617 |
 
 ## 2. Ökosüsteemide tase: mitu teenust muutub seisundi paranedes
@@ -27,6 +28,12 @@ Paaritatud hinnang mediaanide põhjal, ainult hinnangud, kus on piisavalt andmei
 | Metsad | vilets → keskmine | 34 | 19 | 6 | 9 |
 | Metsad | keskmine → hea | 34 | 20 | 0 | 14 |
 | Metsad | vilets → hea | 34 | 21 | 1 | 12 |
+| Kuivad metsad | vilets → keskmine | 34 | 19 | 5 | 10 |
+| Kuivad metsad | keskmine → hea | 34 | 19 | 0 | 15 |
+| Kuivad metsad | vilets → hea | 34 | 21 | 1 | 12 |
+| Märjad metsad | vilets → keskmine | 34 | 17 | 8 | 9 |
+| Märjad metsad | keskmine → hea | 34 | 20 | 2 | 12 |
+| Märjad metsad | vilets → hea | 34 | 17 | 0 | 17 |
 | Põllumaad | vilets → keskmine | 31 | 12 | 4 | 15 |
 | Põllumaad | keskmine → hea | 31 | 7 | 0 | 24 |
 | Põllumaad | vilets → hea | 31 | 8 | 1 | 22 |
@@ -74,6 +81,32 @@ Paaritatud hinnang mediaanide põhjal, ainult hinnangud, kus on piisavalt andmei
 | Loodusmaastiku sidusus 1 km raadiuses | osakaal 0-100 (tõlgendus kinnitada) | 49,0 | 81,0 | 2,71 | +4 % | 2,53 … 2,90 |  |
 | Pohlade potentsiaalne saagikus | kg/ha | -1,00 | -1,00 | -0,045 | -11 % | -0,069 … -0,020 |  |
 
+### Kuivad metsad
+
+| Teenus | Ühik | Mediaan vilets | Mediaan hea | Δ | Δ % | 95 % CI (Δ) | Märkus |
+|---|---|---|---|---|---|---|---|
+| Metsa puitsesse biomassi seotud süsiniku varu | t C/ha | 14,0 | 102,0 | 84,5 | +366 % | 81,8 … 87,2 |  |
+| Metsa puitsesse biomassi seotud süsiniku varu rahaline väärtus (aasta keskmine ETS börsihind) | EUR/ha | 4 189 | 30 299 | 25 022 | +366 % | 24 207 … 25 812 |  |
+| Elupaikade säilitamine looduslikele liikidele | indeks 0-10 | 3,00 | 8,00 | 4,21 | +129 % | 4,19 … 4,23 |  |
+| Söögiseente potentsiaalne saagikus | kg/ha | 26,2 | 81,1 | 33,4 | +115 % | 31,5 … 35,2 |  |
+| Mulla orgaanilise süsiniku varu rahaline väärtus (sotsiaalse kulu hind) | EUR/ha | 358 880 | 415 578 | 20 368 | +5 % | 14 790 … 25 566 |  |
+| Mulla orgaanilise süsiniku varu | t C/ha | 576,0 | 667,0 | 32,7 | +5 % | 23,7 … 41,0 |  |
+| Loodusmaastiku sidusus 1 km raadiuses | osakaal 0-100 (tõlgendus kinnitada) | 46,0 | 78,0 | 2,57 | +4 % | 2,35 … 2,79 |  |
+| Pohlade potentsiaalne saagikus | kg/ha | -1,00 | 3,00 | -0,101 | -9 % | -0,132 … -0,071 |  |
+
+### Märjad metsad
+
+| Teenus | Ühik | Mediaan vilets | Mediaan hea | Δ | Δ % | 95 % CI (Δ) | Märkus |
+|---|---|---|---|---|---|---|---|
+| Metsa puitsesse biomassi seotud süsiniku varu | t C/ha | 19,0 | 66,0 | 57,9 | +212 % | 55,6 … 60,0 |  |
+| Metsa puitsesse biomassi seotud süsiniku varu rahaline väärtus (aasta keskmine ETS börsihind) | EUR/ha | 5 543 | 19 456 | 17 133 | +212 % | 16 472 … 17 777 |  |
+| Elupaikade säilitamine looduslikele liikidele | indeks 0-10 | 3,00 | 8,00 | 4,22 | +121 % | 4,20 … 4,24 |  |
+| Söögiseente potentsiaalne saagikus | kg/ha | 7,20 | 14,4 | 13,4 | +107 % | 12,3 … 14,5 |  |
+| Loodusmaastiku sidusus 1 km raadiuses | osakaal 0-100 (tõlgendus kinnitada) | 53,0 | 84,0 | 2,89 | +4 % | 2,64 … 3,18 |  |
+| Mulla orgaanilise süsiniku varu | t C/ha | 913,0 | 1 638 | 46,9 | +4 % | 33,5 … 60,7 |  |
+| Mulla orgaanilise süsiniku varu rahaline väärtus (sotsiaalse kulu hind) | EUR/ha | 568 850 | 1 020 566 | 29 209 | +4 % | 20 891 … 37 789 |  |
+| Mulla orgaanilise süsiniku varu rahaline väärtus (aasta keskmine ETS börsihind) | EUR/ha | 270 335 | 485 005 | 13 881 | +4 % | 9 928 … 17 958 |  |
+
 ### Põllumaad
 
 | Teenus | Ühik | Mediaan vilets | Mediaan hea | Δ | Δ % | 95 % CI (Δ) | Märkus |
@@ -108,8 +141,8 @@ Need kihid on madalama lahutusvõimega kui seisundiüksus. Põhihinnang tuleb 10
 
 ## 4. Paaritatud ja paaritamata hinnang
 
-* Võrreldavaid hinnanguid: 3434; sama märgiga: 2282 (66 %).
-* Mõlemal hinnangul olulised, kuid **vastupidise märgiga**: 17 (nende puhul muudab asukoha/koosseisu kontroll järelduse suunda).
+* Võrreldavaid hinnanguid: 3638; sama märgiga: 2420 (67 %).
+* Mõlemal hinnangul olulised, kuid **vastupidise märgiga**: 25 (nende puhul muudab asukoha/koosseisu kontroll järelduse suunda).
 
 | Teenus | Üksus | Seisundipaar | Δ paaritatud | Δ paaritamata |
 |---|---|---|---|---|
@@ -117,16 +150,24 @@ Need kihid on madalama lahutusvõimega kui seisundiüksus. Põhihinnang tuleb 10
 | Orgaanilise süsiniku ärakanne | Metsad | keskmine → hea | 0,048 | -0,026 |
 | Orgaanilise süsiniku ärakanne | Metsad | vilets → hea | 0,059 | -0,042 |
 | Orgaanilise süsiniku ärakanne | alam 11800 | vilets → keskmine | 0,036 | -0,022 |
+| Orgaanilise süsiniku ärakanne | Märjad metsad | keskmine → hea | 0,008 | -0,017 |
 | Fosfori mullaerosiooniga ärakande hind | Metsad | keskmine → hea | 0,024 | -0,002 |
 | Fosfori mullaerosiooniga ärakande hind | alam 11800 | vilets → keskmine | 0,017 | -0,009 |
+| Fosfori mullaerosiooniga ärakande hind | Kuivad metsad | keskmine → hea | 0,044 | -0,014 |
+| Fosfori mullaerosiooniga ärakande hind | Märjad metsad | keskmine → hea | 0,003 | -0,001 |
 | Fosfori ärakanne | Metsad | keskmine → hea | 0,006 | -0,000 |
 | Fosfori ärakanne | alam 11800 | vilets → keskmine | 0,004 | -0,002 |
+| Fosfori ärakanne | Kuivad metsad | keskmine → hea | 0,011 | -0,003 |
+| Fosfori ärakanne | Märjad metsad | keskmine → hea | 0,001 | -0,000 |
 | Kasemahla tootmisest saadava tulu potentsiaal | Metsad | vilets → hea | 4,88 | -2,00 |
+| Kasemahla tootmisest saadava tulu potentsiaal | Kuivad metsad | vilets → hea | 3,48 | -4,00 |
 | Kasemahla potentsiaalne saagikus | Metsad | vilets → hea | 16,0 | -7,54 |
 | Kasemahla potentsiaalne saagikus | alam 30500 | vilets → keskmine | 1,22 | -1,89 |
+| Kasemahla potentsiaalne saagikus | Kuivad metsad | vilets → hea | 11,3 | -11,3 |
 | Ökosüsteemide tugi tolmeldajatele | Rohumaad | vilets → hea | 0,037 | -0,047 |
 | Ökosüsteemide tugi tolmeldajatele | Sood | vilets → keskmine | -0,017 | 0,008 |
 | Ökosüsteemide tugi tolmeldajatele | Sood | vilets → hea | -0,020 | 0,010 |
+| Ökosüsteemide tugi tolmeldajatele | Kuivad metsad | vilets → keskmine | -0,002 | 0,016 |
 | Soo puitsesse biomassi seotud süsiniku varu | Sood | vilets → keskmine | -0,648 | 0,759 |
 | Veevoogude reguleerimisvõime (va linnalised teed veekogud) rahaline väärtus | Rohumaad | vilets → keskmine | -27,0 | 5,00 |
 | Veevoogude reguleerimisvõime (va linnalised teed veekogud) maht | Rohumaad | vilets → keskmine | -50,9 | 10,0 |
@@ -154,13 +195,18 @@ Põhijooksu olulistest hinnangutest (paaritatud) säilis oluliseks sama märgiga
 |---|---|---|---|---|---|---|---|
 | klaster5km | okosusteem | 391 | 184 | 184 | +100 % | 9 | 1,000 |
 | klaster5km | alam | 3043 | 991 | 983 | +99 % | 32 | 1,000 |
+| klaster5km | ruhm | 204 | 129 | 127 | +98 % | 0 | 1,000 |
 | klaster20km | okosusteem | 391 | 184 | 184 | +100 % | 1 | 1,000 |
 | klaster20km | alam | 3043 | 991 | 973 | +98 % | 20 | 1,000 |
+| klaster20km | ruhm | 204 | 129 | 125 | +97 % | 0 | 1,000 |
 | ala_0_25ha | okosusteem | 391 | 184 | 182 | +99 % | 17 | 0,986 |
 | ala_0_25ha | alam | 3043 | 991 | 973 | +98 % | 79 | 0,919 |
+| ala_0_25ha | ruhm | 204 | 129 | 129 | +100 % | 4 | 0,990 |
 | ala_4ha | okosusteem | 390 | 183 | 164 | +90 % | 3 | 0,859 |
 | ala_4ha | alam | 2163 | 832 | 716 | +86 % | 38 | 0,879 |
+| ala_4ha | ruhm | 204 | 129 | 127 | +98 % | 1 | 0,959 |
 | seeme_2 | okosusteem | 391 | 184 | 184 | +100 % | 6 | 1,000 |
 | seeme_2 | alam | 3043 | 991 | 990 | +100 % | 10 | 1,000 |
+| seeme_2 | ruhm | 204 | 129 | 128 | +99 % | 0 | 1,000 |
 
 Variandid: `klaster5km`, `klaster20km` (bootstrap-klastri suurus), `ala_0_25ha`, `ala_4ha` (minimaalne ala stratumis), `seeme_2` (teine juhuslik seeme).
