@@ -51,7 +51,19 @@ Muutmata jäid:
 
 V-R1 näitab ka seda, et kogu ahel arhiivist tulemusteni on reprodutseeritav.
 
-## 3. Uued tulemused: kuivad ja märjad metsad
+## 3. Kuivade ja märgade metsade hinnangud
+
+v3 ei lisa uusi andmeid ega uut meetodit. See teeb sama v2 arvutuse kahe uue rühma kohta. Hinnanguid on
+204 = 34 teenusekihti × 2 rühma (kuivad metsad, märjad metsad) × 3 seisundipaari (vilets → keskmine, keskmine → hea,
+vilets → hea).
+
+Iga hinnang on paaritatud Δ: kui palju erineb teenus parema ja halvema seisundi vahel samas 1 km plokis ja samas
+alamökosüsteemis, koondatuna üle rühma alamökosüsteemide. Näiteks puitse biomassi süsinik kuivas metsas, vilets → hea:
+Δ = +84,5 t C/ha (+366 %), 95 % CI 81,8…87,2.
+
+Rühmad on metsa osad. Seetõttu ei ole nende hinnangud metsa hinnangust sõltumatud: metsa hinnang on kuiva metsa, märja
+metsa ja „muu koosluse“ kaalutud koondhinnang. Sisuliselt uus info on rühmadevaheline erinevus. Seda erinevust formaalselt
+ei testita (otsus K3).
 
 | | Hinnanguid | Paaritatud: piisavalt andmeid | Olulisi (q < 0,05) | Paaritamata olulisi |
 |---|---|---|---|---|
@@ -77,8 +89,9 @@ V-R1 näitab ka seda, et kogu ahel arhiivist tulemusteni on reprodutseeritav.
   * elupaikade säilitamine +129 % ja +121 %.
 
   Täielik tabel on failis `docs/tulemused.md` § 2–3.
-* **Tundlikkus:** rühmade olulistest hinnangutest säilis sama märgiga oluliseks 97–100 % (5 ja 20 km klaster, 0,25 ja 4 ha,
-  teine seeme). Δ astakkorrelatsioon põhijooksuga on ≥ 0,95. v2 tasemete read on samad mis v2-s.
+* **Tundlikkus:** 129 olulisest hinnangust jäi viies variandis oluliseks ja sama märgiga 125–129 (97–100 %). Variandid on
+  5 ja 20 km klaster, 0,25 ja 4 ha miinimumpindala ning teine seeme. Δ astakkorrelatsioon põhijooksuga on ≥ 0,95. See
+  kontrollib, kas tulemus sõltub analüüsi parameetritest; uusi andmeid see ei lisa. v2 tasemete read on samad mis v2-s.
 
 ## 4. Mõju olemasolevale süsteemile
 
