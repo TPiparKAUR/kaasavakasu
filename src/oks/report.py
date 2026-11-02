@@ -7,7 +7,7 @@ from pathlib import Path
 
 import polars as pl
 
-from . import catalog, config, kaasnev_export, nouded, stats
+from . import catalog, config, kaasnev, kaasnev_export, nouded, ruhmad, stats
 
 log = logging.getLogger(__name__)
 
@@ -115,15 +115,19 @@ def write_results(results: Path, out_md: Path) -> None:
     )
     nm = dict(zip(cat["id"], cat["nimi"], strict=True))
     un = dict(zip(cat["id"], cat["uhik"], strict=True))
+    # metoodika v3: kuivad ja märjad metsad (tase ``ruhm``) kohe metsa järel
+    big = units.filter(pl.col("unit_level").is_in(["okosusteem", ruhmad.LEVEL]))
     econame = {
         r["unit_code"]: r["nimi"]
-        for r in units.filter(pl.col("unit_level") == "okosusteem").iter_rows(named=True)
+        for r in big.sort(pl.col("unit_code").replace_strict(kaasnev.DISPLAY_ORDER, default=99.0)).iter_rows(
+            named=True
+        )
     }
     lowres = kaasnev_export.LOW_RES_LAYERS
     L: list[str] = [
         "# Tulemuste kokkuvõte",
         "",
-        "Genereeritud `oks.report.write_results`-ga failist `data/tulemused/paarid.parquet`. Meetod: [metoodika.md](metoodika.md). Metoodika v2: hinnangud põhinevad täpsetel pikslimediaanidel (otsused: [metoodika_v2_otsused.md](metoodika_v2_otsused.md)).",
+        "Genereeritud `oks.report.write_results`-ga failist `data/tulemused/paarid.parquet`. Meetod: [metoodika.md](metoodika.md). Metoodika v2: hinnangud põhinevad täpsetel pikslimediaanidel (otsused: [metoodika_v2_otsused.md](metoodika_v2_otsused.md)). Metoodika v3: lisandusid kuivad ja märjad metsad (tase `ruhm`, oma FDR-perekond; otsused: [metoodika_v3_otsused.md](metoodika_v3_otsused.md)).",
         "",
     ]
 
@@ -136,7 +140,11 @@ def write_results(results: Path, out_md: Path) -> None:
         "",
     ]
     rows = []
-    for level, label in (("okosusteem", "Ökosüsteem"), ("alam", "Alamökosüsteem")):
+    for level, label in (
+        ("okosusteem", "Ökosüsteem"),
+        (ruhmad.LEVEL, "Kuivad ja märjad metsad"),
+        ("alam", "Alamökosüsteem"),
+    ):
         d = p.filter(pl.col("unit_level") == level)
         em = d.filter(pl.col("enough_m"))
         eu = d.filter(pl.col("enough_u"))
@@ -174,7 +182,7 @@ def write_results(results: Path, out_md: Path) -> None:
     )
     L.append("")
     rows = []
-    e = p.filter((pl.col("unit_level") == "okosusteem") & pl.col("enough_m"))
+    e = p.filter(pl.col("unit_level").is_in(["okosusteem", ruhmad.LEVEL]) & pl.col("enough_m"))
     for code, name in econame.items():
         for pair in stats.PAIR_NAMES:
             d = e.filter((pl.col("unit_code") == code) & (pl.col("pair") == pair))
@@ -290,7 +298,7 @@ def write_results(results: Path, out_md: Path) -> None:
             [
                 nm[r["layer_id"]],
                 econame.get(r["unit_code"], str(r["unit_code"]))
-                if r["unit_level"] == "okosusteem"
+                if r["unit_level"] in ("okosusteem", ruhmad.LEVEL)
                 else f"alam {r['unit_code']}",
                 r["pair"].replace("→", " → "),
                 _fmt(r["delta_m_med"]),

@@ -22,6 +22,9 @@ from pathlib import Path
 import polars as pl
 
 from . import catalog, config, median
+from .ruhmad import DRY_FOREST as DRY_FOREST  # taasekspordiks (varasem asukoht)
+from .ruhmad import GROUPS
+from .ruhmad import WET_FOREST as WET_FOREST
 
 log = logging.getLogger(__name__)
 
@@ -45,17 +48,9 @@ BIG_CLASSES: dict[int, str] = {
 OTHER_CLASS = 6
 
 #: Metsa jaotus kuivadeks ja märjaks metsaks (kommentaar lähtekasule): ``alam_kood``-id (baaskaardi ökosüsteemitüübid).
-DRY_FOREST: tuple[int, ...] = (30100, 30500, 30600, 30700, 31000)  # salu-, palu-, laane-, loo-, nõmmemets
-WET_FOREST: tuple[int, ...] = (
-    30200,
-    30300,
-    30400,
-    30800,
-    30900,
-)  # soovikumets, sambla-, rohu-, kõdusoomets, rabastuv
+#: Definitsioon on ``ruhmad.GROUPS``-is (sama koosseis kasutatakse statistilises analüüsis, metoodika v3).
 FOREST_SPLIT: dict[int, tuple[str, tuple[int, ...]]] = {
-    31: ("Kuivad metsad", DRY_FOREST),
-    32: ("Märjad metsad", WET_FOREST),
+    g.code: (g.name, g.alam_codes) for g in GROUPS.values()
 }
 BIG_CLASSES.update({k: v[0] for k, v in FOREST_SPLIT.items()})
 #: Kuvamisjärjekord (kuivad ja märjad metsad kohe metsa järel).

@@ -1,0 +1,30 @@
+{
+ "kontrollid": {
+  "V-R2": {
+   "vorreldud": 102,
+   "erinevusi": 0
+  },
+  "V-R3": {
+   "vorreldud": 102,
+   "erinevusi": 0
+  },
+  "V-R4": {
+   "vorreldud": 204,
+   "rühma_lahtreid": 204,
+   "erinevusi": 0
+  },
+  "V-R5": {
+   "vorreldud": 5582,
+   "erinevusi": 0
+  },
+  "V-R6": {
+   "vorreldud": 4156,
+   "erinevusi": 0
+  },
+  "V-R7": {
+   "vorreldud": 204,
+   "erinevusi": 0
+  }
+ },
+ "erinevusi_kokku": 0
+}

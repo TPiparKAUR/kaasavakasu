@@ -9,6 +9,8 @@ Allikas: ELME kihtide arhiiv (`https://d549q4t3lqrx1.cloudfront.net/arhiiv/`, ba
 | [docs/plaan.md](docs/plaan.md) | Eesmärk, ulatus, plaan |
 | [docs/metoodika.md](docs/metoodika.md) | Meetod, eeldused, piirangud, valideerimine |
 | [docs/metoodika_v2_otsused.md](docs/metoodika_v2_otsused.md) | Metoodika v2 (mediaanid, NoData = 0) otsused ja põhjendused |
+| [docs/metoodika_v3_otsused.md](docs/metoodika_v3_otsused.md) | Metoodika v3 (kuivad ja märjad metsad statistilises analüüsis) otsused |
+| [docs/metoodika_v3_v4_ettepanek.md](docs/metoodika_v3_v4_ettepanek.md) | v3 ja v4 (tulemustabeli paaritatud vaade) analüüs ja spetsifikatsioon |
 | [docs/tulemused.md](docs/tulemused.md) | Tulemuste kokkuvõte (genereeritud tulemustabelitest) |
 | [docs/andmekataloog.md](docs/andmekataloog.md) | Analüüsitavad kihid, ühikud, märkused, arhiivi failid |
 | [docs/seis.md](docs/seis.md) | Seis, avatud küsimused, järgmised sammud |
@@ -35,7 +37,7 @@ koostab kvalitatiivse osa raamistiku (`docs/lahteulesanne.md`: nõuded, seis, kr
 ## GitHub Pages
 
 Töövoog `.github/workflows/pages.yml` ehitab saidi igal pushil ja avaldab selle **repo vaikeharust**. Peaaadressil on metoodika v1 leht
-(ehitatud commit'ist `5aa4596`, muutmata kujul), metoodika v2 leht on aadressil `…/v2/` (ainult otselink, v1 lehel viidet ei ole; otsingumootoritele `noindex`). Mõlemad on sama avalikud kui repo.
+(ehitatud commit'ist `5aa4596`, muutmata kujul), metoodika v2 leht on aadressil `…/v2/` (ehitatud commit'ist `de7aca9`, muutmata kujul) ja metoodika v3 leht (kuivad ja märjad metsad statistilises analüüsis) aadressil `…/v3/` (vaikeharu seis). v2 ja v3 on ainult otselingiga (v1 lehel viidet ei ole; otsingumootoritele `noindex`). Kõik on sama avalikud kui repo. Tagasi v2-le: `git revert <v3 commit>` (vt `docs/metoodika_v3_otsused.md`).
 
 1. Repo **Settings → Pages → Build and deployment → Source: GitHub Actions** (ühekordne).
 2. Push vaikeharusse või **Actions → Veebileht → Run workflow**. Valmis aadress: `https://<kasutaja>.github.io/<repo-nimi>/` (praegu repo `kaasavakasu`: `https://tpiparkaur.github.io/kaasavakasu/`).
@@ -48,7 +50,7 @@ git-remote'i saab uuendada käsuga `git remote set-url origin <uus-url>`. Sait k
 
 ```bash
 uv sync                                  # Python 3.12, uv
-uv run pytest -q                         # 77 testi (sünteetilised andmed teadaoleva vastusega)
+uv run pytest -q                         # 99 testi (sünteetilised andmed teadaoleva vastusega)
 uv run ruff check . && uv run mypy src
 
 # Täielik uuesti arvutus (vajab ligipääsu arhiivi hostile; ~ 2–3 h, laeb ~ 25 GB, kustutab toorfailid)
@@ -57,6 +59,8 @@ uv run python -m oks fields              # vektorid (põllumassiivid, lamm) -> r
 uv run python -m oks analyse --sensitivity
 uv run python -m oks kaasnev             # tulemustabelid (tüüp x seisund)
 uv run python scripts/vordle_metoodikad.py   # v1 -> v2 võrdlus
+uv run python scripts/vordle_v2.py           # v3: ökosüsteemi ja alamökosüsteemi read = v2 (git de7aca9)
+uv run python scripts/valideeri_ruhmad.py    # v3: kuivade ja märgade metsade kontrollid
 uv run python -m oks report              # docs/tulemused.md, docs/andmekataloog.md
 uv run python -m oks site --out site
 ```

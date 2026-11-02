@@ -2,8 +2,10 @@
   function qEvidence(ind, ecoCode) {
     // ökosüsteemi tasandi tõendus vilets → hea kihi kaupa; võtame indikaatori esimese kihi, mille kohta on tõendus
     buildTE();
-    const name = D.meta.uhikud.find((x) => x.tase === 'okosusteem' && x.kood === ecoCode)?.nimi;
-    for (const lid of ind.kihid) { const e = D.TE.get(`okosusteem|${name}|${lid}|vilets→hea`); if (e && e.hyve_suund) return { e, lid }; }
+    // ökosüsteem (tase 'okosusteem') või metsa alamrühm (31 kuivad, 32 märjad metsad; tase 'ruhm', metoodika v3)
+    const u = D.meta.uhikud.find((x) => (x.tase === 'okosusteem' || x.tase === 'ruhm') && x.kood === ecoCode);
+    if (!u) return null;
+    for (const lid of ind.kihid) { const e = D.TE.get(`${u.tase}|${u.nimi}|${lid}|vilets→hea`); if (e && e.hyve_suund) return { e, lid }; }
     return null;
   }
   function qualView(root) {
@@ -24,19 +26,24 @@
     xlsxLink(bar, 'Excel (sh tegevuste koondtabeli mall)');
     // tabel: indikaator + ökosüsteemi tõendus
     const wrap = h('div', { class: 'qlist' }, card);
-    const head = h('div', { class: 'qrow qhead' }, wrap);
-    h('div', {}, head, 'Loodushüve'); for (const ok of [3, 2, 1, 4]) h('div', { class: 'qe' }, head, ECO_SHORT[ok]);
+    const qEcos = D.meta.uhikud.some((x) => x.tase === 'ruhm') ? [3, 31, 32, 2, 1, 4] : [3, 2, 1, 4];
+    const q6 = qEcos.length > 4 ? ' q6' : '';
+    const head = h('div', { class: `qrow qhead${q6}` }, wrap);
+    const QSHORT = { 31: 'Kuiv', 32: 'Märg' }; // kitsal ekraanil (kuivad / märjad metsad)
+    h('div', {}, head, 'Loodushüve');
+    for (const ok of qEcos) { const c = h('div', { class: 'qe', title: ECO_SHORT[ok] }, head); h('span', { class: 'ql' }, c, ECO_SHORT[ok]); h('span', { class: 'qsh' }, c, QSHORT[ok] || ECO_SHORT[ok]); }
     for (const ind of Kd.indikaatorid.filter((i) => S.qs.sekt.has(i.sektsioon))) {
       const det = h('details', { class: 'qitem' }, wrap); if (S.qs.open.has(ind.key)) det.open = true;
       det.ontoggle = () => { det.open ? S.qs.open.add(ind.key) : S.qs.open.delete(ind.key); };
-      const sm = h('summary', { class: 'qrow' }, det), nm = h('div', { class: 'qn' }, sm);
+      const sm = h('summary', { class: `qrow${q6}` }, det), nm = h('div', { class: 'qn' }, sm);
       h('b', {}, nm, ind.nimi); h('small', {}, nm, `${ind.sektsioon} · ${ind.tuup === 'varu' ? 'varu' : ind.tuup === 'voog' ? 'aastane voog' : ind.tuup}${ind.suund === 'vaiksem_parem' ? ' · väiksem väärtus on parem' : ''}${ind.kihid.some((id) => Kd.kihid.find((l) => l.id === id)?.madal_lahutus) ? ' · madalam lahutusvõime (930 m / 1 km)' : ''}`);
-      for (const ok of [3, 2, 1, 4]) {
+      for (const ok of qEcos) {
         const td = h('div', { class: 'qe' }, sm), q = qEvidence(ind, ok);
         if (!q) { h('span', { class: 'qb none', title: 'tõendust ei ole (teenus ei esine või ei piisa andmeid)' }, td, '–'); continue; }
         const e = q.e, cls = e.hyve_suund === 'positiivne' ? 'up' : e.hyve_suund === 'negatiivne' ? 'down' : 'unk';
         const sym = e.hyve_suund === 'positiivne' ? '▲' : e.hyve_suund === 'negatiivne' ? '▼' : '○';
-        const b = h('span', { class: `qb ${cls}`, title: `${e.hinnang}: ${sgnRel(e.rel)} (${e.oluline ? 'oluline' : 'ei ole oluline'}); kiht ${q.lid}` }, td, `${sym} ${e.tugevus || ''}`.trim()); void b;
+        const b = h('span', { class: `qb ${cls}`, title: `${e.hinnang}: ${sgnRel(e.rel)} (${e.oluline ? 'oluline' : 'ei ole oluline'}${e.tugevus ? `, ${e.tugevus}` : ''}); kiht ${q.lid}` }, td, sym);
+        if (e.tugevus) h('span', { class: 'qs' }, b, ` ${e.tugevus}`);
       }
       const body = h('dl', { class: 'qdl' }, det);
       const row = (k, v) => { if (!v) return; h('dt', {}, body, k); h('dd', {}, body, v); };

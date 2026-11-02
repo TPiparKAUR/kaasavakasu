@@ -1,0 +1,137 @@
+{
+ "v2_commit": "de7aca9",
+ "tolerants": {
+  "abs": 1e-12,
+  "rel": 1e-09
+ },
+ "failid": {
+  "paarid.parquet": {
+   "v2_ridu": 4180,
+   "v3_ridu_v2_tasemetel": 4180,
+   "puuduvad_veerud": [],
+   "ainult_v2": 0,
+   "ainult_v3": 0,
+   "vorreldud_vaartusi": 238260,
+   "bitti_bitti_samu": 233444,
+   "erinevad_veerud": {},
+   "erinevusi": 0
+  },
+  "lahtrid.parquet": {
+   "v2_ridu": 4283,
+   "v3_ridu_v2_tasemetel": 4283,
+   "puuduvad_veerud": [],
+   "ainult_v2": 0,
+   "ainult_v3": 0,
+   "vorreldud_vaartusi": 107075,
+   "bitti_bitti_samu": 107075,
+   "erinevad_veerud": {},
+   "erinevusi": 0
+  },
+  "klassid.parquet": {
+   "v2_ridu": 7749,
+   "v3_ridu_v2_tasemetel": 7749,
+   "puuduvad_veerud": [],
+   "ainult_v2": 0,
+   "ainult_v3": 0,
+   "vorreldud_vaartusi": 54243,
+   "bitti_bitti_samu": 54243,
+   "erinevad_veerud": {},
+   "erinevusi": 0
+  },
+  "algklassid.parquet": {
+   "v2_ridu": 8531,
+   "v3_ridu_v2_tasemetel": 8531,
+   "puuduvad_veerud": [],
+   "ainult_v2": 0,
+   "ainult_v3": 0,
+   "vorreldud_vaartusi": 51186,
+   "bitti_bitti_samu": 51186,
+   "erinevad_veerud": {},
+   "erinevusi": 0
+  },
+  "jaotused.parquet": {
+   "v2_ridu": 96390,
+   "v3_ridu_v2_tasemetel": 96390,
+   "puuduvad_veerud": [],
+   "ainult_v2": 0,
+   "ainult_v3": 0,
+   "vorreldud_vaartusi": 96390,
+   "bitti_bitti_samu": 96390,
+   "erinevad_veerud": {},
+   "erinevusi": 0
+  },
+  "diagnostika.parquet": {
+   "v2_ridu": 136,
+   "v3_ridu_v2_tasemetel": 136,
+   "puuduvad_veerud": [],
+   "ainult_v2": 0,
+   "ainult_v3": 0,
+   "vorreldud_vaartusi": 408,
+   "bitti_bitti_samu": 202,
+   "erinevad_veerud": {},
+   "erinevusi": 0
+  },
+  "uhikud.parquet": {
+   "v2_ridu": 43,
+   "v3_ridu_v2_tasemetel": 43,
+   "puuduvad_veerud": [],
+   "ainult_v2": 0,
+   "ainult_v3": 0,
+   "vorreldud_vaartusi": 215,
+   "bitti_bitti_samu": 212,
+   "erinevad_veerud": {},
+   "erinevusi": 0
+  },
+  "paarid_segumudel.parquet": {
+   "v2_ridu": 36,
+   "v3_ridu_v2_tasemetel": 36,
+   "puuduvad_veerud": [],
+   "ainult_v2": 0,
+   "ainult_v3": 0,
+   "vorreldud_vaartusi": 720,
+   "bitti_bitti_samu": 720,
+   "erinevad_veerud": {},
+   "erinevusi": 0
+  },
+  "lahtrid_segumudel.parquet": {
+   "v2_ridu": 36,
+   "v3_ridu_v2_tasemetel": 36,
+   "puuduvad_veerud": [],
+   "ainult_v2": 0,
+   "ainult_v3": 0,
+   "vorreldud_vaartusi": 324,
+   "bitti_bitti_samu": 324,
+   "erinevad_veerud": {},
+   "erinevusi": 0
+  },
+  "tundlikkus.csv": {
+   "v2_ridu": 10,
+   "v3_ridu_v2_tasemetel": 10,
+   "puuduvad_veerud": [],
+   "ainult_v2": 0,
+   "ainult_v3": 0,
+   "vorreldud_vaartusi": 70,
+   "bitti_bitti_samu": 70,
+   "erinevad_veerud": {},
+   "erinevusi": 0
+  },
+  "parameetrid.csv": {
+   "v2_ridu": 1,
+   "v3_ridu_v2_tasemetel": 1,
+   "puuduvad_veerud": [],
+   "erinevusi": 0
+  },
+  "teenused_lisa.csv": {
+   "v2_ridu": 37,
+   "v3_ridu_v2_tasemetel": 37,
+   "puuduvad_veerud": [],
+   "ainult_v2": 0,
+   "ainult_v3": 0,
+   "vorreldud_vaartusi": 37,
+   "bitti_bitti_samu": 37,
+   "erinevad_veerud": {},
+   "erinevusi": 0
+  }
+ },
+ "erinevusi_kokku": 0
+}

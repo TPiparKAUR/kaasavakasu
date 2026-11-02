@@ -573,6 +573,7 @@ def analyse_layer_median(
 
     # ---------- paaritatud: stratumi mediaanid ----------
     M_wd, M_w, M_wa, M_cnt = (np.zeros((ncl, nu, 3)) for _ in range(4))
+    M_wb = np.zeros((ncl, nu, 3))  # metoodika v3: parema seisundi kaalutud plokimediaan (tase M_b)
     diffs: dict[tuple[int, int], list[NDArray[np.float64]]] = {}
     strata = bl.filter(pl.col("grouping") == "alam") if not bl.is_empty() else bl
     if not strata.is_empty():
@@ -604,6 +605,7 @@ def analyse_layer_median(
                 M_wd[:, :, pi] += _scatter(sh, (c_ok, unit_ix), ww * dd)
                 M_w[:, :, pi] += _scatter(sh, (c_ok, unit_ix), ww)
                 M_wa[:, :, pi] += _scatter(sh, (c_ok, unit_ix), ww * ma)
+                M_wb[:, :, pi] += _scatter(sh, (c_ok, unit_ix), ww * mb)
                 M_cnt[:, :, pi] += _scatter(sh, (c_ok, unit_ix), np.ones_like(ww))
             for uix in np.unique(ec_ok):
                 diffs.setdefault((int(uix), pi), []).append(dd[ec_ok == uix])
@@ -612,6 +614,8 @@ def analyse_layer_median(
     m_boot = _ratio(np.tensordot(W, M_wd, axes=(1, 0)), np.tensordot(W, M_w, axes=(1, 0)))
     m_obs = _ratio(M_wd.sum(0), M_w.sum(0))
     ma_obs = _ratio(M_wa.sum(0), M_w.sum(0))
+    mb_obs = _ratio(M_wb.sum(0), M_w.sum(0))
+    w_sum = M_w.sum(0)
     m_cnt = M_cnt.sum(0)
     m_ncl = (M_cnt > 0).sum(0)
 
@@ -694,6 +698,11 @@ def analyse_layer_median(
                     "median_d_m_med": med_d,
                     "share_pos_m_med": share_pos,
                     "wilcoxon_p_med": wil_p,
+                    # metoodika v3: paaritatud tasemed (halvema ja parema seisundi plokimediaanide kaalutud keskmine
+                    # samades paarides; level_b - level_a = delta_m_med) ja kaalude summa
+                    "level_a_m_med": ma0,
+                    "level_b_m_med": mb_obs[ui, pi],
+                    "sum_w_m_med": w_sum[ui, pi],
                 }
             )
 
